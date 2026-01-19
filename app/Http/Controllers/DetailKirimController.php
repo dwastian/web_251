@@ -4,11 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\DetailKirim;
 use App\Models\MasterKirim;
-use App\Models\Produk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DetailKirimController extends Controller
 {
+    public function index($kodekirim)
+    {
+        $masterkirim = MasterKirim::where('kodekirim', $kodekirim)->with('detail.produk')->firstOrFail();
+
+        return view('masterkirim.show', compact('masterkirim'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -17,11 +24,13 @@ class DetailKirimController extends Controller
             'qty' => 'required|numeric|min:1',
         ]);
 
-        DetailKirim::create($request->all());
+        DB::transaction(function () use ($request) {
+            DetailKirim::create($request->all());
 
-        // hitung ulang total qty
-        $total = DetailKirim::where('kodekirim', $request->kodekirim)->sum('qty');
-        MasterKirim::where('kodekirim', $request->kodekirim)->update(['totalqty' => $total]);
+            // hitung ulang total qty
+            $total = DetailKirim::where('kodekirim', $request->kodekirim)->sum('qty');
+            MasterKirim::where('kodekirim', $request->kodekirim)->update(['totalqty' => $total]);
+        });
 
         return back()->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -32,11 +41,13 @@ class DetailKirimController extends Controller
             'qty' => 'required|numeric|min:1',
         ]);
 
-        $detailKirim->update($request->all());
+        DB::transaction(function () use ($request, $detailKirim) {
+            $detailKirim->update($request->all());
 
-        // hitung ulang total qty
-        $total = DetailKirim::where('kodekirim', $detailKirim->kodekirim)->sum('qty');
-        MasterKirim::where('kodekirim', $detailKirim->kodekirim)->update(['totalqty' => $total]);
+            // hitung ulang total qty
+            $total = DetailKirim::where('kodekirim', $detailKirim->kodekirim)->sum('qty');
+            MasterKirim::where('kodekirim', $detailKirim->kodekirim)->update(['totalqty' => $total]);
+        });
 
         return back()->with('success', 'Qty berhasil diupdate.');
     }
@@ -44,13 +55,15 @@ class DetailKirimController extends Controller
     public function destroy(DetailKirim $detailKirim)
     {
         $kode = $detailKirim->kodekirim;
-        $detailKirim->delete();
 
-        // hitung ulang setelah delete
-        $total = DetailKirim::where('kodekirim', $kode)->sum('qty');
-        MasterKirim::where('kodekirim', $kode)->update(['totalqty' => $total]);
+        DB::transaction(function () use ($detailKirim) {
+            $detailKirim->delete();
+
+            // hitung ulang setelah delete
+            $total = DetailKirim::where('kodekirim', $detailKirim->kodekirim)->sum('qty');
+            MasterKirim::where('kodekirim', $detailKirim->kodekirim)->update(['totalqty' => $total]);
+        });
 
         return back()->with('success', 'Produk berhasil dihapus.');
     }
 }
-

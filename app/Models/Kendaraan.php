@@ -7,14 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class Kendaraan extends Model
 {
     protected $table = 'kendaraan';
+
     protected $primaryKey = 'nopol';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
         'nopol',
-        'merk',
-        'jenis',
+        'namakendaraan',
+        'jeniskendaraan',
+        'namadriver',
         'tahun',
         'kapasitas',
         'foto',

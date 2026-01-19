@@ -11,6 +11,7 @@ class ProdukController extends Controller
     public function index()
     {
         $produk = Produk::all();
+
         return view('produk.index', compact('produk'));
     }
 
@@ -26,18 +27,26 @@ class ProdukController extends Controller
             'nama' => 'required',
             'satuan' => 'required',
             'harga' => 'required|numeric',
+            'kodegudang' => 'required|exists:gudang,kodegudang',
             'gambar' => 'nullable|image|max:2048',
         ]);
 
         $data = $request->all();
 
         if ($request->hasFile('gambar')) {
-            $data['gambar'] = $request->gambar->store('produk','public');
+            $data['gambar'] = $request->gambar->store('produk', 'public');
+        } else {
+            $data['gambar'] = null;
         }
 
         Produk::create($data);
 
-        return redirect()->route('produk.index')->with('success','Produk berhasil dibuat.');
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil dibuat.');
+    }
+
+    public function show(Produk $produk)
+    {
+        return view('produk.show', compact('produk'));
     }
 
     public function edit(Produk $produk)
@@ -48,30 +57,41 @@ class ProdukController extends Controller
     public function update(Request $request, Produk $produk)
     {
         $request->validate([
+            'kodeproduk' => 'required|unique:produk,kodeproduk,' . $produk->kodeproduk . ',kodeproduk',
             'nama' => 'required',
             'satuan' => 'required',
             'harga' => 'required|numeric',
+            'kodegudang' => 'required|exists:gudang,kodegudang',
             'gambar' => 'nullable|image|max:2048',
         ]);
 
         $data = $request->all();
 
         if ($request->hasFile('gambar')) {
-            if ($produk->gambar) Storage::disk('public')->delete($produk->gambar);
-            $data['gambar'] = $request->gambar->store('produk','public');
+            $data['gambar'] = $request->gambar->store('produk', 'public');
+            if ($produk->gambar) {
+                Storage::disk('public')->delete($produk->gambar);
+            }
+        } else {
+            $data['gambar'] = $produk->gambar;
         }
 
         $produk->update($data);
 
-        return redirect()->route('produk.index')->with('success','Produk berhasil diupdate.');
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil diupdate.');
     }
 
     public function destroy(Produk $produk)
     {
-        if ($produk->gambar) Storage::disk('public')->delete($produk->gambar);
+        if ($produk->detailkirim()->exists()) {
+            return redirect()->route('produk.index')->with('error', 'Produk tidak dapat dihapus karena masih digunakan dalam pengiriman.');
+        }
+
+        if ($produk->gambar) {
+            Storage::disk('public')->delete($produk->gambar);
+        }
         $produk->delete();
 
-        return redirect()->route('produk.index')->with('success','Produk berhasil dihapus.');
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil dihapus.');
     }
 }
-

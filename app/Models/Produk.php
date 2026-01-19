@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Produk extends Model
 {
     protected $table = 'produk';
-    protected $primaryKey = 'kodeproduk';
-    public $incrementing = false;
-    public $timestamps = false;
-    protected $keyType = 'string';
 
+    protected $primaryKey = 'kodeproduk';
+
+    public $incrementing = false;
+
+    public $timestamps = false;
+
+    protected $keyType = 'string';
 
     protected $fillable = [
         'kodeproduk',
@@ -19,7 +22,9 @@ class Produk extends Model
         'harga',
         'satuan',
         'gambar',
+        'kodegudang',
     ];
+
     public function gudang()
     {
         return $this->belongsTo(Gudang::class, 'kodegudang', 'kodegudang');
