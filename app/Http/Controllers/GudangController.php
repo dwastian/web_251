@@ -13,6 +13,7 @@ class GudangController extends Controller
     public function index()
     {
         $gudang = Gudang::all();
+
         return view('gudang.index', compact('gudang'));
     }
 
@@ -34,7 +35,7 @@ class GudangController extends Controller
             'namagudang' => 'required',
             'alamat' => 'required',
             'kontak' => 'required',
-            'kapasitas' => 'required|double',
+            'kapasitas' => 'required|numeric',
         ]);
 
         Gudang::create($request->all());
@@ -64,10 +65,11 @@ class GudangController extends Controller
     public function update(Request $request, Gudang $gudang)
     {
         $request->validate([
+            'kodegudang' => 'required|unique:gudang,kodegudang,' . $gudang->kodegudang . ',kodegudang',
             'namagudang' => 'required',
             'alamat' => 'required',
             'kontak' => 'required',
-            'kapasitas' => 'required|double',
+            'kapasitas' => 'required|numeric',
         ]);
 
         $gudang->update($request->all());
@@ -81,6 +83,10 @@ class GudangController extends Controller
      */
     public function destroy(Gudang $gudang)
     {
+        if ($gudang->produk()->exists()) {
+            return redirect()->route('gudang.index')->with('error', 'Gudang tidak dapat dihapus karena masih memiliki produk.');
+        }
+
         $gudang->delete();
 
         return redirect()->route('gudang.index')->with('success', 'Gudang berhasil dihapus.');

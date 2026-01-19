@@ -40,9 +40,13 @@
                 <a href="{{ route('produk.edit',$p->kodeproduk) }}" class="btn btn-warning btn-sm">
                     <i class="fa fa-edit"></i>
                 </a>
-                <button onclick="confirmDelete('{{ route('produk.destroy',$p->kodeproduk) }}')" class="btn btn-danger btn-sm">
-                    <i class="fa fa-trash"></i>
-                </button>
+                <form action="{{ route('produk.destroy',$p->kodeproduk) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </form>
             </td>
         </tr>
     @endforeach

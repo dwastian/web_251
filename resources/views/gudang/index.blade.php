@@ -32,10 +32,13 @@
                 <a href="{{ route('gudang.edit',$g->kodegudang) }}" class="btn btn-sm btn-warning">
                     <i class="fa fa-edit"></i>
                 </a>
-                <button onclick="confirmDelete('{{ route('gudang.destroy',$g->kodegudang) }}')"
-                        class="btn btn-sm btn-danger">
-                    <i class="fa fa-trash"></i>
-                </button>
+                <form action="{{ route('gudang.destroy',$g->kodegudang) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gudang ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </form>
             </td>
         </tr>
     @endforeach

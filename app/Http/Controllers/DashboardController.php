@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Produk;
 use App\Models\Gudang;
 use App\Models\Kendaraan;
 use App\Models\MasterKirim;
+use App\Models\Produk;
 
 class DashboardController extends Controller
 {

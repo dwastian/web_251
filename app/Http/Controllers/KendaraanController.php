@@ -13,6 +13,7 @@ class KendaraanController extends Controller
     public function index()
     {
         $kendaraan = Kendaraan::all();
+
         return view('kendaraan.index', compact('kendaraan'));
     }
 
@@ -36,7 +37,7 @@ class KendaraanController extends Controller
             'namadriver' => 'required',
             'tahun' => 'required|integer',
             'kapasitas' => 'required|string',
-            'foto',
+            'foto' => 'nullable|image|max:2048',
         ]);
 
         Kendaraan::create($request->all());
@@ -66,12 +67,13 @@ class KendaraanController extends Controller
     public function update(Request $request, Kendaraan $kendaraan)
     {
         $request->validate([
+            'nopol' => 'required|unique:kendaraan,nopol,' . $kendaraan->nopol . ',nopol',
             'namakendaraan' => 'required',
             'jeniskendaraan' => 'required',
             'namadriver' => 'required',
             'tahun' => 'required|integer',
             'kapasitas' => 'required|string',
-            'foto',
+            'foto' => 'nullable|image|max:2048',
         ]);
 
         $kendaraan->update($request->all());
@@ -84,6 +86,10 @@ class KendaraanController extends Controller
      */
     public function destroy(Kendaraan $kendaraan)
     {
+        if ($kendaraan->masterkirim()->exists()) {
+            return redirect()->route('kendaraan.index')->with('error', 'Kendaraan tidak dapat dihapus karena masih digunakan dalam pengiriman.');
+        }
+
         $kendaraan->delete();
 
         return redirect()->route('kendaraan.index')->with('success', 'Kendaraan berhasil dihapus.');

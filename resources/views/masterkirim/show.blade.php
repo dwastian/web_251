@@ -24,16 +24,18 @@
 
 <div class="row">
     <div class="col-md-6">
-        <select name="kodeproduk" class="form-control select2" required>
-            <option value="">- Pilih Produk -</option>
-            @foreach(\App\Models\Produk::orderBy('nama')->get() as $p)
-                <option value="{{ $p->kodeproduk }}">{{ $p->nama }} ({{ $p->satuan }})</option>
-            @endforeach
-        </select>
-    </div>
-    <div class="col-md-3">
-        <input type="number" name="qty" class="form-control" placeholder="Qty" required>
-    </div>
+         <select name="kodeproduk" class="form-control select2" required>
+             <option value="">- Pilih Produk -</option>
+             @foreach(\App\Models\Produk::orderBy('nama')->get() as $p)
+                 <option value="{{ $p->kodeproduk }}">{{ $p->nama }} ({{ $p->satuan }})</option>
+             @endforeach
+         </select>
+         <span class="text-danger">@error('kodeproduk') {{ $message }} @enderror</span>
+     </div>
+     <div class="col-md-3">
+         <input type="number" name="qty" class="form-control" placeholder="Qty" required>
+         <span class="text-danger">@error('qty') {{ $message }} @enderror</span>
+     </div>
     <div class="col-md-3">
         <button class="btn btn-primary">Tambah</button>
     </div>
@@ -61,9 +63,13 @@
             <td>{{ $d->produk->satuan }}</td>
             <td>{{ $d->qty }}</td>
             <td>
-                <button onclick="confirmDelete('{{ route('detailkirim.destroy',$d->id) }}')" class="btn btn-danger btn-sm">
-                    <i class="fa fa-trash"></i>
-                </button>
+                <form action="{{ route('detailkirim.destroy',$d->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus detail ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </form>
             </td>
         </tr>
     @endforeach

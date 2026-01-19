@@ -40,7 +40,11 @@
             </td>
             <td>
                 <a href="{{ route('kendaraan.edit',$k->nopol) }}" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></a>
-                <button onclick="confirmDelete('{{ route('kendaraan.destroy',$k->nopol) }}')" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button>
+                <form action="{{ route('kendaraan.destroy',$k->nopol) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kendaraan ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button>
+                </form>
             </td>
         </tr>
     @endforeach
