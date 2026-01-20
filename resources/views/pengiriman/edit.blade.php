@@ -50,6 +50,27 @@
         font-size: 12px;
         padding: 4px 8px;
     }
+    .new-product-row {
+        animation: slideDownFade 0.4s ease-out;
+    }
+    @keyframes slideDownFade {
+        0% {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    .highlight-merge {
+        background-color: #fff3cd !important;
+        animation: pulseMerge 1.5s ease-in-out;
+    }
+    @keyframes pulseMerge {
+        0%, 100% { background-color: #fff3cd; }
+        50% { background-color: #ffeaa7; }
+    }
 </style>
 @endpush
 
@@ -140,6 +161,7 @@
     <h5><i class="fa fa-box"></i> Detail Item Pengiriman</h5>
     
     <!-- Add Product Form -->
+    @if($pengiriman->status != 'confirmed')
     <div class="card mb-4">
         <div class="card-header bg-success text-white">
             <h6 class="mb-0"><i class="fa fa-plus"></i> Tambah Produk</h6>
@@ -148,7 +170,7 @@
             <form id="add-product-form">
                 @csrf
                 <input type="hidden" name="kodekirim" value="{{ $pengiriman->kodekirim }}">
-                
+
                 <div class="row">
                     <div class="col-md-6">
                         <label>Pilih Produk</label>
@@ -173,6 +195,12 @@
             </form>
         </div>
     </div>
+    @else
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle"></i>
+        Pengiriman yang sudah dikonfirmasi tidak dapat diubah. Produk tidak dapat ditambahkan atau dihapus.
+    </div>
+    @endif
 
     <!-- Detail Table -->
     <div class="card">
@@ -192,27 +220,29 @@
                         </tr>
                     </thead>
                     <tbody id="detail-tbody">
-                        @foreach($pengiriman->detailkirim as $detail)
-                            <tr class="product-row" data-id="{{ $detail->id }}">
-                                <td>{{ $detail->kodeproduk }}</td>
-                                <td>{{ $detail->produk->nama }}</td>
-                                <td>{{ $detail->produk->satuan }}</td>
-                                <td>
-                                    <input type="number" class="form-control qty-input" value="{{ $detail->qty }}" 
-                                           data-id="{{ $detail->id }}" data-original="{{ $detail->qty }}">
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-sm btn-warning edit-qty" data-id="{{ $detail->id }}">
-                                            <i class="fa fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger delete-detail" data-id="{{ $detail->id }}">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
+                         @foreach($pengiriman->detailkirim as $detail)
+                             <tr class="product-row" data-id="{{ $detail->id }}" data-kodeproduk="{{ $detail->kodeproduk }}">
+                                 <td>{{ $detail->kodeproduk }}</td>
+                                 <td>{{ $detail->produk->nama }}</td>
+                                 <td>{{ $detail->produk->satuan }}</td>
+                                 <td>
+                                     <input type="number" class="form-control qty-input" value="{{ $detail->qty }}"
+                                            data-id="{{ $detail->id }}" data-original="{{ $detail->qty }}" readonly>
+                                 </td>
+                                 <td>
+                                     <div class="btn-group">
+                                         @if($pengiriman->status != 'confirmed')
+                                         <button class="btn btn-sm btn-warning edit-qty" data-id="{{ $detail->id }}">
+                                             <i class="fa fa-edit"></i>
+                                         </button>
+                                         <button class="btn btn-sm btn-danger delete-detail" data-id="{{ $detail->id }}">
+                                             <i class="fa fa-trash"></i>
+                                         </button>
+                                         @endif
+                                     </div>
+                                 </td>
+                             </tr>
+                         @endforeach
                         <tr id="empty-row" @if($pengiriman->detailkirim->count() > 0) style="display:none;" @endif>
                             <td colspan="5" class="text-center text-muted">
                                 <i class="fa fa-info-circle"></i> Belum ada detail barang
@@ -325,130 +355,9 @@ $(document).ready(function() {
     // Initialize with current vehicle
     $('#nopol-select').trigger('change');
 
-    // Add product form submission
-    $('#add-product-form').on('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = $(this).serialize();
-        const submitBtn = $(this).find('button[type="submit"]');
-        
-        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menambah...');
-        
-        $.ajax({
-            url: '/pengiriman/add-product',
-            method: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response.success) {
-                    location.reload(); // Simple reload for now
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
-            },
-            error: function() {
-                Swal.fire('Error', 'Gagal menambah produk', 'error');
-            },
-            complete: function() {
-                submitBtn.prop('disabled', false).html('<i class="fa fa-plus"></i> Tambah');
-            }
-        });
-    });
+    // Add product form is now handled by ProductRepeaterManager
 
-    // Edit quantity
-    $('.edit-qty').on('click', function() {
-        const id = $(this).data('id');
-        const input = $(`.qty-input[data-id="${id}"]`);
-        const original = input.data('original');
-        
-        input.prop('readonly', false).css('background-color', '#fff');
-        $(this).html('<i class="fa fa-save"></i>').removeClass('btn-warning').addClass('btn-success');
-        $(this).off('click').on('click', function() {
-            saveQuantity(id);
-        });
-    });
-
-    // Save quantity function
-    function saveQuantity(id) {
-        const input = $(`.qty-input[data-id="${id}"]`);
-        const newQty = parseInt(input.val());
-        const original = parseInt(input.data('original'));
-        
-        if (newQty < 1) {
-            Swal.fire('Error', 'Kuantitas minimal 1', 'error');
-            return;
-        }
-        
-        if (newQty === original) {
-            input.prop('readonly', true).css('background-color', '#f8f9fa');
-            $(`.edit-qty[data-id="${id}"]`).html('<i class="fa fa-edit"></i>').removeClass('btn-success').addClass('btn-warning');
-            return;
-        }
-        
-        $.ajax({
-            url: `/pengiriman/update-detail-qty/${id}`,
-            method: 'PUT',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                qty: newQty
-            },
-            success: function(response) {
-                if (response.success) {
-                    input.data('original', newQty);
-                    $('#total-qty').text(response.total_qty);
-                    Swal.fire('Success', response.message, 'success');
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
-            },
-            error: function() {
-                Swal.fire('Error', 'Gagal update kuantitas', 'error');
-            }
-        });
-    }
-
-    // Delete detail
-    $('.delete-detail').on('click', function() {
-        const id = $(this).data('id');
-        
-        Swal.fire({
-            title: 'Konfirmasi Hapus',
-            text: 'Apakah Anda yakin ingin menghapus item ini?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/pengiriman/remove-detail/${id}`,
-                    method: 'DELETE',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $(`.product-row[data-id="${id}"]`).remove();
-                            $('#total-qty').text(response.total_qty);
-                            
-                            // Show empty row if no items left
-                            if ($('#detail-tbody tr').length === 1) {
-                                $('#empty-row').show();
-                            }
-                            
-                            Swal.fire('Success', response.message, 'success');
-                        } else {
-                            Swal.fire('Error', response.message, 'error');
-                        }
-                    },
-                    error: function() {
-                        Swal.fire('Error', 'Gagal hapus item', 'error');
-                    }
-                });
-            }
-        });
-    });
+    // Edit and delete handlers are now managed by ProductRepeaterManager
 
     // Form submission handlers
     $('#pengiriman-form').on('submit', function() {

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailKirim;
 use App\Models\Kendaraan;
 use App\Models\MasterKirim;
 use App\Models\Produk;
-use App\Models\DetailKirim;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -45,25 +45,19 @@ class PengirimanController extends Controller
                 'tglkirim' => 'required|date',
                 'nopol' => 'required|exists:kendaraan,nopol',
                 'catatan' => 'nullable|string|max:500',
+                'produk' => 'required|array|min:1',
+                'produk.*' => 'required|exists:produk,kodeproduk',
+                'kuantitas' => 'required|array|min:1',
+                'kuantitas.*' => 'required|integer|min:1',
             ]);
         } else {
             // For other actions, validate differently
-            if ($pengiriman) {
-                $request->validate([
-                    'kodekirim' => 'required|unique:pengiriman,kodekirim,' . $pengiriman->kodekirim . ',kodekirim',
-                    'tglkirim' => 'required|date',
-                    'nopol' => 'required|exists:kendaraan,nopol',
-                    'catatan' => 'nullable|string|max:500',
-                ]);
-            } else {
-                // New record, different validation
-                $request->validate([
-                    'kodekirim' => 'required|unique:pengiriman,kodekirim',
-                    'tglkirim' => 'required|date',
-                    'nopol' => 'required|exists:kendaraan,nopol',
-                    'catatan' => 'nullable|string|max:500',
-                ]);
-            }
+            $request->validate([
+                'kodekirim' => 'required|unique:pengiriman,kodekirim',
+                'tglkirim' => 'required|date',
+                'nopol' => 'required|exists:kendaraan,nopol',
+                'catatan' => 'nullable|string|max:500',
+            ]);
         }
 
         try {
@@ -77,6 +71,25 @@ class PengirimanController extends Controller
                 'status' => 'draft',
                 'catatan' => $request->catatan,
             ]);
+
+            // Process product details
+            $totalQty = 0;
+            if ($request->has('produk') && is_array($request->produk)) {
+                foreach ($request->produk as $index => $kodeproduk) {
+                    $qty = $request->kuantitas[$index] ?? 0;
+                    if ($kodeproduk && $qty > 0) {
+                        DetailKirim::create([
+                            'kodekirim' => $pengiriman->kodekirim,
+                            'kodeproduk' => $kodeproduk,
+                            'qty' => $qty,
+                        ]);
+                        $totalQty += $qty;
+                    }
+                }
+            }
+
+            // Update total quantity
+            $pengiriman->update(['totalqty' => $totalQty]);
 
             DB::commit();
             return redirect()->route('pengiriman.edit', $pengiriman->kodekirim)
@@ -157,7 +170,7 @@ class PengirimanController extends Controller
     {
         $kendaraan = Kendaraan::find($nopol);
 
-        if (!$kendaraan) {
+        if (! $kendaraan) {
             return response()->json(['error' => 'Kendaraan tidak ditemukan'], 404);
         }
 
@@ -174,10 +187,10 @@ class PengirimanController extends Controller
     /**
      * Save pengiriman (final confirmation)
      */
-    public function savePengiriman(Request $request, MasterKirim $pengiriman = null)
+    public function savePengiriman(Request $request, ?MasterKirim $pengiriman = null)
     {
         $request->validate([
-            'action' => 'required|in:save_draft,confirm_save,cancel'
+            'action' => 'required|in:save_draft,confirm_save,cancel',
         ]);
 
         try {
@@ -208,8 +221,9 @@ class PengirimanController extends Controller
                     if ($pengiriman && $pengiriman->status === 'draft') {
                         $pengiriman->detailkirim()->delete();
                         $pengiriman->delete();
+
                         return redirect()->route('pengiriman.index')
-                                   ->with('info', 'Pengiriman dibatalkan.');
+                            ->with('info', 'Pengiriman dibatalkan.');
                     }
                     $message = 'Pengiriman dibatalkan.';
                     break;
@@ -219,10 +233,12 @@ class PengirimanController extends Controller
             }
 
             DB::commit();
+
             return redirect()->route('pengiriman.index')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->with('error', $e->getMessage());
         }
     }
@@ -242,8 +258,8 @@ class PengirimanController extends Controller
             DB::transaction(function () use ($request) {
                 // Check if product already exists in this pengiriman
                 $existingDetail = DetailKirim::where('kodekirim', $request->kodekirim)
-                                          ->where('kodeproduk', $request->kodeproduk)
-                                          ->first();
+                    ->where('kodeproduk', $request->kodeproduk)
+                    ->first();
 
                 if ($existingDetail) {
                     // Update existing quantity
@@ -262,13 +278,13 @@ class PengirimanController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Produk berhasil ditambahkan.',
-                'total_qty' => DetailKirim::where('kodekirim', $request->kodekirim)->sum('qty')
+                'total_qty' => DetailKirim::where('kodekirim', $request->kodekirim)->sum('qty'),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menambah produk: ' . $e->getMessage()
+                'message' => 'Gagal menambah produk: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -279,7 +295,7 @@ class PengirimanController extends Controller
     public function updateDetailQty(Request $request, DetailKirim $detail)
     {
         $request->validate([
-            'qty' => 'required|numeric|min:1'
+            'qty' => 'required|numeric|min:1',
         ]);
 
         try {
@@ -294,13 +310,13 @@ class PengirimanController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Kuantitas berhasil diupdate.',
-                'total_qty' => DetailKirim::where('kodekirim', $detail->kodekirim)->sum('qty')
+                'total_qty' => DetailKirim::where('kodekirim', $detail->kodekirim)->sum('qty'),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal update kuantitas: ' . $e->getMessage()
+                'message' => 'Gagal update kuantitas: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -323,13 +339,13 @@ class PengirimanController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item berhasil dihapus.',
-                'total_qty' => DetailKirim::where('kodekirim', $detail->kodekirim)->sum('qty')
+                'total_qty' => DetailKirim::where('kodekirim', $detail->kodekirim)->sum('qty'),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal hapus item: ' . $e->getMessage()
+                'message' => 'Gagal hapus item: '.$e->getMessage(),
             ], 500);
         }
     }
