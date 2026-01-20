@@ -1,4 +1,334 @@
 // Pengiriman Barang - Custom JavaScript Functions
+class ProductRepeaterManager {
+    constructor() {
+        this.addedProducts = new Map(); // Track products added in this session (for merging)
+        this.initializeRepeater();
+    }
+
+    initializeRepeater() {
+        this.setupAddProductForm();
+        this.setupDynamicEventHandlers();
+    }
+
+    setupAddProductForm() {
+        const addForm = document.getElementById('add-product-form');
+        if (addForm) {
+            addForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleAddProduct();
+            });
+        }
+    }
+
+    setupDynamicEventHandlers() {
+        // Dynamic event delegation for edit/delete buttons on new rows
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-qty')) {
+                e.preventDefault();
+                this.handleEditQty(e.target);
+            } else if (e.target.classList.contains('delete-detail')) {
+                e.preventDefault();
+                this.handleDeleteDetail(e.target);
+            }
+        });
+
+        // Dynamic event for save quantity
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-success') && e.target.textContent.includes('Save')) {
+                e.preventDefault();
+                this.handleSaveQty(e.target);
+            }
+        });
+    }
+
+    handleAddProduct() {
+        const form = document.getElementById('add-product-form');
+        if (!form) return;
+
+        const productSelect = form.querySelector('[name="kodeproduk"]');
+        const qtyInput = form.querySelector('[name="qty"]');
+        const kodeproduk = productSelect.value;
+        const qty = parseInt(qtyInput.value);
+
+        // Validate
+        if (!kodeproduk) {
+            this.showError('Silakan pilih produk.');
+            return;
+        }
+        if (qty < 1) {
+            this.showError('Kuantitas minimal 1.');
+            return;
+        }
+
+        // Check if product already exists in table
+        const existingRow = document.querySelector(`.product-row[data-kodeproduk="${kodeproduk}"]`);
+        if (existingRow) {
+            // Merge quantities
+            const existingQtyInput = existingRow.querySelector('.qty-input');
+            const currentQty = parseInt(existingQtyInput.value) || 0;
+            const newQty = currentQty + qty;
+            existingQtyInput.value = newQty;
+            existingQtyInput.setAttribute('data-original', newQty);
+
+            // Highlight the merged row
+            existingRow.classList.add('highlight-merge');
+            setTimeout(() => existingRow.classList.remove('highlight-merge'), 1500);
+
+            // Update total
+            this.updateTotalQuantity();
+
+            // Reset form
+            this.resetAddForm();
+
+            // Show success message
+            const productName = productSelect.options[productSelect.selectedIndex].text.split(' (')[0];
+            this.showSuccess(`Kuantitas produk ${productName} berhasil ditambahkan.`);
+
+            return;
+        }
+
+        // Get product details for new row
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const productName = selectedOption.text.split(' (')[0];
+        const satuan = selectedOption.text.match(/\(([^)]+)\)/)?.[1] || '';
+
+        // Add new row
+        this.addProductRow({
+            kodeproduk: kodeproduk,
+            nama: productName,
+            satuan: satuan,
+            qty: qty
+        });
+
+        // Reset form
+        this.resetAddForm();
+
+        // Show success message
+        this.showSuccess(`Produk ${productName} berhasil ditambahkan.`);
+    }
+
+    addProductRow(productData) {
+        const tbody = document.getElementById('detail-tbody');
+        if (!tbody) return;
+
+        // Hide empty row
+        const emptyRow = document.getElementById('empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = 'none';
+        }
+
+        // Create new row HTML
+        const rowHtml = `
+            <tr class="product-row new-product-row" data-kodeproduk="${productData.kodeproduk}">
+                <td>${productData.kodeproduk}</td>
+                <td>${productData.nama}</td>
+                <td>${productData.satuan}</td>
+                <td>
+                    <input type="number" class="form-control qty-input" value="${productData.qty}"
+                           data-original="${productData.qty}" min="1">
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-warning edit-qty">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-detail">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        // Insert at top of tbody
+        tbody.insertAdjacentHTML('afterbegin', rowHtml);
+
+        // Update total
+        this.updateTotalQuantity();
+
+        // Track in addedProducts map
+        this.addedProducts.set(productData.kodeproduk, productData.qty);
+    }
+
+    resetAddForm() {
+        const form = document.getElementById('add-product-form');
+        if (form) {
+            form.reset();
+            // Reset select2 if used
+            const select = form.querySelector('select');
+            if (select && select.select2) {
+                select.select2('val', '');
+            }
+        }
+    }
+
+    handleEditQty(button) {
+        const row = button.closest('.product-row');
+        const input = row.querySelector('.qty-input');
+        const originalQty = input.getAttribute('data-original');
+
+        input.readOnly = false;
+        input.style.backgroundColor = '#fff';
+        input.focus();
+
+        button.innerHTML = '<i class="fa fa-save"></i>';
+        button.classList.remove('btn-warning');
+        button.classList.add('btn-success');
+    }
+
+    handleSaveQty(button) {
+        const row = button.closest('.product-row');
+        const input = row.querySelector('.qty-input');
+        const newQty = parseInt(input.value);
+
+        if (newQty < 1) {
+            this.showError('Kuantitas minimal 1.');
+            return;
+        }
+
+        const originalQty = parseInt(input.getAttribute('data-original'));
+
+        if (newQty === originalQty) {
+            // No change, just reset UI
+            input.readOnly = true;
+            input.style.backgroundColor = '#f8f9fa';
+            button.innerHTML = '<i class="fa fa-edit"></i>';
+            button.classList.remove('btn-success');
+            button.classList.add('btn-warning');
+            return;
+        }
+
+        // Update data-original
+        input.setAttribute('data-original', newQty);
+
+        // Reset UI
+        input.readOnly = true;
+        input.style.backgroundColor = '#f8f9fa';
+        button.innerHTML = '<i class="fa fa-edit"></i>';
+        button.classList.remove('btn-success');
+        button.classList.add('btn-warning');
+
+        // Update total
+        this.updateTotalQuantity();
+
+        // Update tracking if this was an added product
+        const kodeproduk = row.getAttribute('data-kodeproduk');
+        if (this.addedProducts.has(kodeproduk)) {
+            this.addedProducts.set(kodeproduk, newQty);
+        }
+
+        this.showSuccess('Kuantitas berhasil diupdate.');
+    }
+
+    handleDeleteDetail(button) {
+        const row = button.closest('.product-row');
+        const kodeproduk = row.getAttribute('data-kodeproduk');
+        const productName = row.querySelector('td:nth-child(2)').textContent;
+
+        Swal.fire({
+            title: 'Konfirmasi Hapus',
+            text: `Apakah Anda yakin ingin menghapus produk ${productName}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Remove from tracking if it was added in this session
+                this.addedProducts.delete(kodeproduk);
+
+                // Remove row
+                row.remove();
+
+                // Update total
+                this.updateTotalQuantity();
+
+                // Show empty row if no products left
+                const tbody = document.getElementById('detail-tbody');
+                const remainingRows = tbody.querySelectorAll('.product-row');
+                if (remainingRows.length === 0) {
+                    const emptyRow = document.getElementById('empty-row');
+                    if (emptyRow) {
+                        emptyRow.style.display = '';
+                    }
+                }
+
+                this.showSuccess(`Produk ${productName} berhasil dihapus.`);
+            }
+        });
+    }
+
+    updateTotalQuantity() {
+        const qtyInputs = document.querySelectorAll('.qty-input');
+        let totalQty = 0;
+
+        qtyInputs.forEach(input => {
+            const qty = parseInt(input.value) || 0;
+            totalQty += qty;
+        });
+
+        const totalElement = document.getElementById('total-qty');
+        if (totalElement) {
+            totalElement.textContent = totalQty;
+        }
+
+        // Update jenis count
+        const jenisElement = document.querySelector('#jenis-count');
+        if (jenisElement) {
+            const productRows = document.querySelectorAll('.product-row');
+            jenisElement.textContent = productRows.length;
+        }
+    }
+
+    collectAllProducts() {
+        const products = [];
+        const productRows = document.querySelectorAll('.product-row');
+
+        productRows.forEach(row => {
+            const kodeproduk = row.getAttribute('data-kodeproduk');
+            const qtyInput = row.querySelector('.qty-input');
+            const qty = parseInt(qtyInput.value) || 0;
+
+            products.push({
+                kodeproduk: kodeproduk,
+                qty: qty
+            });
+        });
+
+        return products;
+    }
+
+    showError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message,
+            confirmButtonColor: '#d33'
+        });
+    }
+
+    showWarning(message) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Peringatan',
+            text: message,
+            confirmButtonColor: '#ffc107'
+        });
+    }
+
+    showSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil',
+            text: message,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }
+}
+
 class PengirimanManager {
     constructor() {
         this.initializeEventListeners();
@@ -276,6 +606,7 @@ class PengirimanManager {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.pengirimanManager = new PengirimanManager();
+    window.productRepeaterManager = new ProductRepeaterManager();
 
     // Make functions globally accessible
     window.addPengirimanProduct = (kodekirim, kodeproduk, qty) => {

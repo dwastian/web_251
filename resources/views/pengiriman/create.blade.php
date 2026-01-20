@@ -38,6 +38,48 @@
             padding: 20px;
             margin: 20px 0;
         }
+
+        .detail-table {
+            margin-top: 20px;
+        }
+
+        .product-row {
+            transition: background-color 0.3s;
+        }
+
+        .product-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .qty-input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .new-product-row {
+            animation: slideDownFade 0.4s ease-out;
+        }
+
+        @keyframes slideDownFade {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .highlight-merge {
+            background-color: #fff3cd !important;
+            animation: pulseMerge 1.5s ease-in-out;
+        }
+
+        @keyframes pulseMerge {
+            0%, 100% { background-color: #fff3cd; }
+            50% { background-color: #ffeaa7; }
+        }
     </style>
 @endpush
 
@@ -153,15 +195,43 @@
             function getProductInfo(selectElement) {
                 const kodeproduk = selectElement.value;
                 const row = $(selectElement).closest('tr');
+
                 if (kodeproduk) {
-                    $.get('/produk/get-produk/' + kodeproduk)
-                        .done(function(data) {
-                            row.find('input[name="nama[]"]').val(data.data.nama);
-                            row.find('input[name="satuan[]"]').val(data.data.satuan);
-                        })
-                        .fail(function() {
-                            alert('Gagal memuat informasi produk.');
-                        });
+                    // Check if this product is already selected in another row
+                    let duplicateFound = false;
+                    const qtyToAdd = parseInt(row.find('input[name="kuantitas[]"]').val()) || 1;
+
+                    $('#product-rows tr').not(row).each(function() {
+                        const existingSelect = $(this).find('select[name="produk[]"]');
+                        if (existingSelect.val() === kodeproduk) {
+                            // Found duplicate - merge quantities
+                            const existingQtyInput = $(this).find('input[name="kuantitas[]"]');
+                            const currentQty = parseInt(existingQtyInput.val()) || 0;
+                            existingQtyInput.val(currentQty + qtyToAdd);
+
+                            // Highlight the merged row
+                            $(this).addClass('highlight-merge');
+                            setTimeout(() => $(this).removeClass('highlight-merge'), 1500);
+
+                            // Remove the current row since we merged
+                            row.remove();
+
+                            duplicateFound = true;
+                            return false; // break out of each loop
+                        }
+                    });
+
+                    if (!duplicateFound) {
+                        // No duplicate found, load product info
+                        $.get('/produk/get-produk/' + kodeproduk)
+                            .done(function(data) {
+                                row.find('input[name="nama[]"]').val(data.data.nama);
+                                row.find('input[name="satuan[]"]').val(data.data.satuan);
+                            })
+                            .fail(function() {
+                                alert('Gagal memuat informasi produk.');
+                            });
+                    }
                 } else {
                     row.find('input[name="nama[]"]').val('');
                     row.find('input[name="satuan[]"]').val('');
@@ -173,13 +243,14 @@
             }
 
             function addProdukRow() {
+                // Always add a new row at the top - users can select products and quantities as needed
                 const newRow = `
-                    <tr class="product-row">
+                    <tr class="product-row new-product-row">
                         <td>
                             <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
                                 <option value="">- Pilih Produk -</option>
                                 @foreach ($produk as $p)
-                                    <option value="{{ $p->kodeproduk }}">
+                                    <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
                                         {{ $p->kodeproduk }} - {{ $p->nama }}
                                     </option>
                                 @endforeach
@@ -192,7 +263,7 @@
                             <input type="text" name="satuan[]" class="form-control" readonly>
                         </td>
                         <td>
-                            <input type="number" name="kuantitas[]" class="form-control" min="1" required>
+                            <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
                         </td>
                         <td>
                                 <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
@@ -201,11 +272,11 @@
                             </td>
                     </tr>
                 `;
-                $('#product-rows').append(newRow);
+                // Insert at the top instead of bottom
+                $('#product-rows').prepend(newRow);
             }
 
             $(document).ready(function() {
-                $('')
                 // Vehicle selection handler
                 $('#nopol-select').on('change', function() {
                     const nopol = $(this).val();
@@ -221,16 +292,14 @@
                                 }
                             })
                             .fail(function() {
-                                $('#driver-info').html(
-                                    '<div class="alert alert-danger">Gagal memuat informasi kendaraan.</div>'
-                                ).show();
+                                alert('Gagal memuat informasi kendaraan.');
                             });
                     } else {
-                        $('#driver-info').hide();
+                        $('#namadriver').val('');
                     }
                 });
 
-                // Form submission
+                // Form submission handlers
                 $('#pengiriman-form').on('submit', function() {
                     const submitBtn = $(this).find('button[type="submit"]');
                     submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');

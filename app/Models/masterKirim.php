@@ -32,7 +32,7 @@ class MasterKirim extends Model
 
     public function detailkirim()
     {
-        return $this->hasMany(DetailKirim::class, 'kodekirim', 'kodekirim');
+        return $this->hasMany(DetailKirim::class, 'kodekirim', 'kodekirim')->orderBy('created_at', 'desc');
     }
 
     public function getStatusAttribute($value)
