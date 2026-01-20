@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class masterKirim extends Model
+class MasterKirim extends Model
 {
     protected $table = 'masterkirim';
 
@@ -12,7 +12,7 @@ class masterKirim extends Model
 
     public $incrementing = false;
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $keyType = 'string';
 
@@ -21,6 +21,8 @@ class masterKirim extends Model
         'tglkirim',
         'nopol',
         'totalqty',
+        'status',
+        'catatan',
     ];
 
     public function kendaraan()
@@ -31,5 +33,10 @@ class masterKirim extends Model
     public function detailkirim()
     {
         return $this->hasMany(DetailKirim::class, 'kodekirim', 'kodekirim');
+    }
+
+    public function getStatusAttribute($value)
+    {
+        return ucfirst($value);
     }
 }

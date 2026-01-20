@@ -19,6 +19,7 @@ class Kendaraan extends Model
         'namakendaraan',
         'jeniskendaraan',
         'namadriver',
+        'kontakdriver',
         'tahun',
         'kapasitas',
         'foto',

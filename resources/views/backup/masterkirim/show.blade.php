@@ -4,7 +4,17 @@
 
 @section('content')
 
-<h5>Detail Pengiriman</h5>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>Detail Pengiriman</h5>
+    <div>
+        <a href="{{ route('masterkirim.edit',$masterkirim->kodekirim) }}" class="btn btn-warning btn-sm">
+            <i class="fa fa-edit"></i> Edit
+        </a>
+        <a href="{{ route('masterkirim.index') }}" class="btn btn-secondary btn-sm">
+            <i class="fa fa-arrow-left"></i> Kembali
+        </a>
+    </div>
+</div>
 
 <div class="card mb-3">
     <div class="card-body">
@@ -63,7 +73,7 @@
             <td>{{ $d->produk->satuan }}</td>
             <td>{{ $d->qty }}</td>
             <td>
-                <form action="{{ route('detailkirim.destroy',$d->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus detail ini?')">
+                <form action="{{ route('detailkirim.destroy',$d->id) }}" method="POST" style="display:inline;" class="delete-form" data-item-name="{{ $d->produk->nama }}">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-sm">

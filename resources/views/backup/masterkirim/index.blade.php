@@ -30,7 +30,8 @@
             <td>{{ $m->totalqty }}</td>
             <td>
                 <a href="{{ route('masterkirim.show',$m->kodekirim) }}" class="btn btn-success btn-sm"><i class="fa fa-eye"></i></a>
-                <form action="{{ route('masterkirim.destroy',$m->kodekirim) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus master kirim ini?')">
+                <a href="{{ route('masterkirim.edit',$m->kodekirim) }}" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></a>
+                <form action="{{ route('masterkirim.destroy',$m->kodekirim) }}" method="POST" style="display:inline;" class="delete-form" data-item-name="pengiriman {{ $m->kodekirim }}">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button>

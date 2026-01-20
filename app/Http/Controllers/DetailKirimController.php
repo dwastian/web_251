@@ -13,7 +13,7 @@ class DetailKirimController extends Controller
     {
         $masterkirim = MasterKirim::where('kodekirim', $kodekirim)->with('detail.produk')->firstOrFail();
 
-        return view('masterkirim.show', compact('masterkirim'));
+        return view('pengiriman.show', compact('masterkirim'));
     }
 
     public function store(Request $request)

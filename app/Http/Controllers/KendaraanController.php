@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kendaraan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class KendaraanController extends Controller
 {
@@ -35,12 +36,25 @@ class KendaraanController extends Controller
             'namakendaraan' => 'required',
             'jeniskendaraan' => 'required',
             'namadriver' => 'required',
-            'tahun' => 'required|integer',
+            'kontakdriver' => 'required|string|max:15',
+            'tahun' => 'required|integer|between:1900,2155',
             'kapasitas' => 'required|string',
             'foto' => 'nullable|image|max:2048',
         ]);
 
-        Kendaraan::create($request->all());
+        $data = $request->all();
+
+        if ($request->hasFile('foto')) {
+            try {
+                $data['foto'] = $request->foto->store('kendaraan', 'public');
+            } catch (\Exception $e) {
+                return back()->with('error', 'Gagal mengupload foto: ' . $e->getMessage())->withInput();
+            }
+        } else {
+            $data['foto'] = null;
+        }
+
+        Kendaraan::create($data);
 
         return redirect()->route('kendaraan.index')->with('success', 'Kendaraan berhasil dibuat.');
     }
@@ -71,12 +85,28 @@ class KendaraanController extends Controller
             'namakendaraan' => 'required',
             'jeniskendaraan' => 'required',
             'namadriver' => 'required',
-            'tahun' => 'required|integer',
+            'kontakdriver' => 'required|string|max:15',
+            'tahun' => 'required|integer|between:1900,2155',
             'kapasitas' => 'required|string',
             'foto' => 'nullable|image|max:2048',
         ]);
 
-        $kendaraan->update($request->all());
+        $data = $request->all();
+
+        if ($request->hasFile('foto')) {
+            try {
+                $data['foto'] = $request->foto->store('kendaraan', 'public');
+                if ($kendaraan->foto) {
+                    Storage::disk('public')->delete($kendaraan->foto);
+                }
+            } catch (\Exception $e) {
+                return back()->with('error', 'Gagal mengupload foto: ' . $e->getMessage())->withInput();
+            }
+        } else {
+            $data['foto'] = $kendaraan->foto;
+        }
+
+        $kendaraan->update($data);
 
         return redirect()->route('kendaraan.index')->with('success', 'Kendaraan berhasil diupdate.');
     }
@@ -88,6 +118,10 @@ class KendaraanController extends Controller
     {
         if ($kendaraan->masterkirim()->exists()) {
             return redirect()->route('kendaraan.index')->with('error', 'Kendaraan tidak dapat dihapus karena masih digunakan dalam pengiriman.');
+        }
+
+        if ($kendaraan->foto) {
+            Storage::disk('public')->delete($kendaraan->foto);
         }
 
         $kendaraan->delete();

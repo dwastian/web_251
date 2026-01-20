@@ -18,6 +18,7 @@
             <th>Nama</th>
             <th>Satuan</th>
             <th>Harga</th>
+            <th>Gudang</th>
             <th>Gambar</th>
             <th>Aksi</th>
         </tr>
@@ -29,8 +30,9 @@
             <td>{{ $p->nama }}</td>
             <td>{{ $p->satuan }}</td>
             <td>{{ number_format($p->harga,0,',','.') }}</td>
-            <td>
-                @if($p->gambar)
+            <td>{{ $p->gudang->namagudang }}</td>
+                <td>
+                    @if($p->gambar)
                     <img src="{{ asset('storage/'.$p->gambar) }}" height="50">
                 @else
                     <span class="text-muted">-</span>
@@ -40,7 +42,7 @@
                 <a href="{{ route('produk.edit',$p->kodeproduk) }}" class="btn btn-warning btn-sm">
                     <i class="fa fa-edit"></i>
                 </a>
-                <form action="{{ route('produk.destroy',$p->kodeproduk) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?')">
+                <form action="{{ route('produk.destroy',$p->kodeproduk) }}" method="POST" style="display:inline;" class="delete-form" data-item-name="{{ $p->nama }}">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-sm">

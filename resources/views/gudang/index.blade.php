@@ -32,7 +32,7 @@
                 <a href="{{ route('gudang.edit',$g->kodegudang) }}" class="btn btn-sm btn-warning">
                     <i class="fa fa-edit"></i>
                 </a>
-                <form action="{{ route('gudang.destroy',$g->kodegudang) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gudang ini?')">
+                <form action="{{ route('gudang.destroy',$g->kodegudang) }}" method="POST" style="display:inline;" class="delete-form" data-item-name="{{ $g->namagudang }}">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-sm btn-danger">

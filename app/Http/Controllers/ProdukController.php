@@ -10,7 +10,7 @@ class ProdukController extends Controller
 {
     public function index()
     {
-        $produk = Produk::all();
+        $produk = Produk::with('gudang')->get();
 
         return view('produk.index', compact('produk'));
     }
@@ -93,5 +93,20 @@ class ProdukController extends Controller
         $produk->delete();
 
         return redirect()->route('produk.index')->with('success', 'Produk berhasil dihapus.');
+    }
+
+    public function getProduk($id) {
+        $produk = Produk::find($id);
+        if ($produk) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $produk
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        }
     }
 }
