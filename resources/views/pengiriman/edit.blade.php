@@ -1,371 +1,498 @@
 @extends('layouts.app')
 
-@section('title','Edit Pengiriman')
+@section('title', 'Edit Pengiriman')
 
 @push('styles')
-<style>
-    .driver-info {
-        background: #e8f5e8;
-        border-left: 4px solid #28a745;
-        padding: 15px;
-        margin: 15px 0;
-        border-radius: 5px;
-    }
-    .driver-info h6 {
-        color: #155724;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    .detail-section {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        padding: 20px;
-        margin-top: 20px;
-    }
-    .detail-table {
-        margin-top: 20px;
-    }
-    .action-buttons {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-    }
-    .btn-lg {
-        padding: 10px 20px;
-        font-size: 16px;
-    }
-    .product-row {
-        transition: background-color 0.3s;
-    }
-    .product-row:hover {
-        background-color: #f8f9fa;
-    }
-    .qty-input {
-        width: 80px;
-        text-align: center;
-    }
-    .status-badge {
-        font-size: 12px;
-        padding: 4px 8px;
-    }
-    .new-product-row {
-        animation: slideDownFade 0.4s ease-out;
-    }
-    @keyframes slideDownFade {
-        0% {
-            transform: translateY(-20px);
-            opacity: 0;
+    <style>
+        .driver-info {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
         }
-        100% {
-            transform: translateY(0);
-            opacity: 1;
+
+        .driver-info h6 {
+            color: #155724;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
-    }
-    .highlight-merge {
-        background-color: #fff3cd !important;
-        animation: pulseMerge 1.5s ease-in-out;
-    }
-    @keyframes pulseMerge {
-        0%, 100% { background-color: #fff3cd; }
-        50% { background-color: #ffeaa7; }
-    }
-</style>
+
+        .detail-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .product-select {
+            margin-bottom: 15px;
+        }
+
+        .add-product-section {
+            background: #ffffff;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .detail-table {
+            margin-top: 20px;
+        }
+
+        .product-row {
+            transition: background-color 0.3s;
+        }
+
+        .product-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .qty-input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+
+        .new-product-row {
+            animation: slideDownFade 0.4s ease-out;
+        }
+
+        @keyframes slideDownFade {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .highlight-merge {
+            background-color: #fff3cd !important;
+            animation: pulseMerge 1.5s ease-in-out;
+        }
+
+        @keyframes pulseMerge {
+
+            0%,
+            100% {
+                background-color: #fff3cd;
+            }
+
+            50% {
+                background-color: #ffeaa7;
+            }
+        }
+    </style>
 @endpush
 
 @section('content')
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4>Edit Pengiriman: {{ $pengiriman->kodekirim }}</h4>
-    <div>
-        <span class="status-badge badge bg-{{ $pengiriman->status == 'draft' ? 'warning' : ($pengiriman->status == 'confirmed' ? 'success' : 'secondary') }}">
-            {{ $pengiriman->status }}
-        </span>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-3">
+            <h4 class="mb-0">Edit Pengiriman: {{ $pengiriman->kodekirim }}</h4>
+            <span
+                class="status-badge badge bg-{{ $pengiriman->status == 'draft' ? 'warning' : ($pengiriman->status == 'Confirmed' ? 'success' : 'secondary') }}">
+                {{ $pengiriman->status }}
+            </span>
+        </div>
+        <a href="{{ route('pengiriman.index') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> Kembali
+        </a>
     </div>
-</div>
 
-<form id="pengiriman-form" method="POST" action="{{ route('pengiriman.update', $pengiriman->kodekirim) }}">
-    @csrf
-    @method('PUT')
-    
-    <!-- Informasi Pengiriman -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fa fa-info-circle"></i> Informasi Pengiriman</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <label>Kode Pengiriman</label>
-                    <input type="text" name="kodekirim" class="form-control" value="{{ $pengiriman->kodekirim }}" required>
-                    <span class="text-danger">@error('kodekirim') {{ $message }} @enderror</span>
-                </div>
-                <div class="col-md-4">
-                    <label>Tanggal Kirim</label>
-                    <input type="date" name="tglkirim" class="form-control" value="{{ $pengiriman->tglkirim }}" required>
-                    <span class="text-danger">@error('tglkirim') {{ $message }} @enderror</span>
-                </div>
-                <div class="col-md-4">
-                    <label>Pilih Kendaraan</label>
-                    <select name="nopol" class="form-control select2" id="nopol-select" required>
-                        <option value="">- Pilih Kendaraan -</option>
-                        @foreach($kendaraan as $k)
-                            <option value="{{ $k->nopol }}" {{ $pengiriman->nopol == $k->nopol ? 'selected' : '' }}>
-                                {{ $k->nopol }} - {{ $k->namakendaraan }} ({{ $k->kapasitas }})
-                            </option>
-                        @endforeach
-                    </select>
-                    <span class="text-danger">@error('nopol') {{ $message }} @enderror</span>
-                </div>
+    <form id="pengiriman-form">
+
+        <!-- Informasi Pengiriman -->
+        <div class="card mb-5">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fa fa-info-circle"></i> Informasi Pengiriman</h5>
             </div>
-
-            <!-- Driver Info (Auto Display) -->
-            <div id="driver-info" class="driver-info">
-                <h6><i class="fa fa-user"></i> Informasi Driver</h6>
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Nama Driver:</strong> <span id="driver-name">{{ $pengiriman->kendaraan->namadriver ?? '-' }}</span>
+            <div class="card-body">
+                <div class="grid grid-cols-1 space-y-3">
+                    <div class="">
+                        <label>Kode Pengiriman</label>
+                        <input type="text" name="kodekirim" class="form-control" value="{{ $pengiriman->kodekirim }}"
+                            readonly>
+                        <span class="text-danger">@error('kodekirim')
+                            {{ $message }}
+                        @enderror</span>
                     </div>
-                    <div class="col-md-6">
-                        <strong>Kontak Driver:</strong> <span id="driver-contact">{{ $pengiriman->kendaraan->kontakdriver ?? '-' }}</span>
+                    <div class="">
+                        <label>Tanggal Kirim</label>
+                        <input type="date" name="tglkirim" class="form-control" value="{{ $pengiriman->tglkirim }}" {{ $pengiriman->status == 'Confirmed' ? 'readonly' : 'required' }}>
+                        <span class="text-danger">@error('tglkirim')
+                            {{ $message }}
+                        @enderror</span>
                     </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <strong>Jenis Kendaraan:</strong> <span id="vehicle-type">{{ $pengiriman->kendaraan->jeniskendaraan ?? '-' }}</span>
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Tahun:</strong> <span id="vehicle-year">{{ $pengiriman->kendaraan->tahun ?? '-' }}</span>
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Kapasitas:</strong> <span id="vehicle-capacity">{{ $pengiriman->kendaraan->kapasitas ?? '-' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Catatan -->
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <label>Catatan</label>
-                    <textarea name="catatan" class="form-control" rows="3" placeholder="Tambahkan catatan pengiriman...">{{ old('catatan', $pengiriman->catatan) }}</textarea>
-                    <span class="text-danger">@error('catatan') {{ $message }} @enderror</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
-
-<!-- Detail Item Pengiriman -->
-<div class="detail-section">
-    <h5><i class="fa fa-box"></i> Detail Item Pengiriman</h5>
-    
-    <!-- Add Product Form -->
-    @if($pengiriman->status != 'confirmed')
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <h6 class="mb-0"><i class="fa fa-plus"></i> Tambah Produk</h6>
-        </div>
-        <div class="card-body">
-            <form id="add-product-form">
-                @csrf
-                <input type="hidden" name="kodekirim" value="{{ $pengiriman->kodekirim }}">
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <label>Pilih Produk</label>
-                        <select name="kodeproduk" class="form-control select2" id="product-select" required>
-                            <option value="">- Pilih Produk -</option>
-                            @foreach(\App\Models\Produk::orderBy('nama')->get() as $p)
-                                <option value="{{ $p->kodeproduk }}">{{ $p->nama }} ({{ $p->satuan }}) - Stok: {{ \App\Models\DetailKirim::where('kodeproduk', $p->kodeproduk)->sum('qty') ?? 0 }}</option>
+                    <div class="">
+                        <label>Pilih Kendaraan</label>
+                        <select name="nopol" class="form-control" id="nopol-select" {{ $pengiriman->status == 'Confirmed' ? 'disabled' : 'required' }}>
+                            <option value="">- Pilih Kendaraan -</option>
+                            @foreach ($kendaraan as $k)
+                                <option value="{{ $k->nopol }}" {{ $pengiriman->nopol == $k->nopol ? 'selected' : '' }}>
+                                    {{ $k->nopol }} - {{ $k->namakendaraan }} ({{ $k->kapasitas }})
+                                </option>
                             @endforeach
                         </select>
+                        <span class="text-danger">@error('nopol')
+                            {{ $message }}
+                        @enderror</span>
                     </div>
-                    <div class="col-md-3">
-                        <label>Kuantitas</label>
-                        <input type="number" name="qty" class="form-control" id="qty-input" min="1" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label>&nbsp;</label>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fa fa-plus"></i> Tambah
-                        </button>
+                    <div class="">
+                        <label>Nama Driver</label>
+                        <input type="text" name="namadriver" id="namadriver" class="form-control"
+                            value="{{ $pengiriman->kendaraan->namadriver ?? '-' }}" readonly disabled>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-    @else
-    <div class="alert alert-info">
-        <i class="fa fa-info-circle"></i>
-        Pengiriman yang sudah dikonfirmasi tidak dapat diubah. Produk tidak dapat ditambahkan atau dihapus.
-    </div>
-    @endif
 
-    <!-- Detail Table -->
+                <!-- Driver Info (Auto Display) -->
+                <div id="driver-info" class="driver-info">
+                    <h6><i class="fa fa-user"></i> Informasi Driver</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Nama Driver:</strong> <span
+                                id="driver-name">{{ $pengiriman->kendaraan->namadriver ?? '-' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Kontak Driver:</strong> <span
+                                id="driver-contact">{{ $pengiriman->kendaraan->kontakdriver ?? '-' }}</span>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong>Jenis Kendaraan:</strong> <span
+                                id="vehicle-type">{{ $pengiriman->kendaraan->jeniskendaraan ?? '-' }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Tahun:</strong> <span
+                                id="vehicle-year">{{ $pengiriman->kendaraan->tahun ?? '-' }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Kapasitas:</strong> <span
+                                id="vehicle-capacity">{{ $pengiriman->kendaraan->kapasitas ?? '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Catatan -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Catatan</label>
+                        <textarea name="catatan" class="form-control" rows="3" placeholder="Tambahkan catatan pengiriman..."
+                            {{ $pengiriman->status == 'Confirmed' ? 'readonly' : '' }}>{{ old('catatan', $pengiriman->catatan) }}</textarea>
+                        <span class="text-danger">@error('catatan') {{ $message }} @enderror</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Detail Item Pengiriman -->
     <div class="card">
-        <div class="card-header bg-info text-white">
-            <h6 class="mb-0"><i class="fa fa-list"></i> Detail Barang</h6>
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fa fa-info-circle"></i> Detail Pengiriman</h5>
         </div>
         <div class="card-body">
+            @if ($pengiriman->status == 'Confirmed')
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i>
+                    Pengiriman yang sudah dikonfirmasi tidak dapat diubah. Produk tidak dapat ditambahkan atau dihapus.
+                </div>
+            @endif
             <div class="table-responsive detail-table">
-                <table class="table table-bordered">
-                    <thead class="table-dark">
+                <table class="table border border-slate-200">
+                    <thead>
                         <tr>
-                            <th>Kode</th>
+                            <th>Produk</th>
                             <th>Nama Produk</th>
                             <th>Satuan</th>
-                            <th>Kuantitas</th>
+                            <th>Kuantitas Kirim</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="detail-tbody">
-                         @foreach($pengiriman->detailkirim as $detail)
-                             <tr class="product-row" data-id="{{ $detail->id }}" data-kodeproduk="{{ $detail->kodeproduk }}">
-                                 <td>{{ $detail->kodeproduk }}</td>
-                                 <td>{{ $detail->produk->nama }}</td>
-                                 <td>{{ $detail->produk->satuan }}</td>
-                                 <td>
-                                     <input type="number" class="form-control qty-input" value="{{ $detail->qty }}"
-                                            data-id="{{ $detail->id }}" data-original="{{ $detail->qty }}" readonly>
-                                 </td>
-                                 <td>
-                                     <div class="btn-group">
-                                         @if($pengiriman->status != 'confirmed')
-                                         <button class="btn btn-sm btn-warning edit-qty" data-id="{{ $detail->id }}">
-                                             <i class="fa fa-edit"></i>
-                                         </button>
-                                         <button class="btn btn-sm btn-danger delete-detail" data-id="{{ $detail->id }}">
-                                             <i class="fa fa-trash"></i>
-                                         </button>
-                                         @endif
-                                     </div>
-                                 </td>
-                             </tr>
-                         @endforeach
-                        <tr id="empty-row" @if($pengiriman->detailkirim->count() > 0) style="display:none;" @endif>
-                            <td colspan="5" class="text-center text-muted">
-                                <i class="fa fa-info-circle"></i> Belum ada detail barang
-                            </td>
-                        </tr>
+                    <tbody id="product-rows">
+                        <!-- Items will be populated by JS -->
                     </tbody>
+                    <tfoot>
+                        @if ($pengiriman->status != 'Confirmed')
+                            <tr>
+                                <td colspan="5">
+                                    <div class="flex w-full justify-end">
+                                        <button type="button" onclick="addProdukRow()" class="btn btn-success btn-sm">
+                                            <i class="fa fa-plus"></i> Tambah Baris
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
+                    </tfoot>
                 </table>
             </div>
-            
-            <!-- Summary -->
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <h5>Ringkasan:</h5>
-                    <ul>
-                        <li>Total Jenis Barang: <strong>{{ $pengiriman->detailkirim->count() }}</strong> jenis</li>
-                        <li>Total Kuantitas: <strong id="total-qty">{{ $pengiriman->totalqty }}</strong></li>
-                    </ul>
-                </div>
-                <div class="col-md-6">
-                    <h5>Status Pengiriman:</h5>
-                    <div class="alert alert-info">
-                        <i class="fa fa-info-circle"></i> 
-                        Pengiriman saat ini dalam status <strong>{{ $pengiriman->status }}</strong>
-                        @if($pengiriman->status == 'draft')
-                            <br>Anda dapat mengubah detail barang atau menyimpan sebagai draft.
-                        @endif
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- Fixed Action Buttons -->
-<div class="action-buttons">
-    <div class="card">
-        <div class="card-body">
-            <div class="btn-group-vertical">
-                <form method="POST" action="{{ route('pengiriman.save-pengiriman', $pengiriman->kodekirim) }}" style="display:inline;">
-                    @csrf
-                    <button type="submit" name="action" value="save_draft" class="btn btn-warning btn-lg">
-                        <i class="fa fa-save"></i> Simpan Draft
-                    </button>
-                    <button type="submit" name="action" value="confirm_save" class="btn btn-success btn-lg">
-                        <i class="fa fa-check"></i> Konfirmasi & Simpan
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('pengiriman.save-pengiriman', $pengiriman->kodekirim) }}" style="display:inline;">
-                    @csrf
-                    <button type="submit" name="action" value="cancel" class="btn btn-danger btn-lg"
-                            onclick="return confirm('Apakah Anda yakin ingin membatalkan pengiriman ini? Semua detail barang akan dihapus.')">
-                        <i class="fa fa-times"></i> Batal
-                    </button>
-                </form>
-                <a href="{{ route('pengiriman.index') }}" class="btn btn-secondary btn-lg">
-                    <i class="fa fa-arrow-left"></i> Kembali
-                </a>
-            </div>
-        </div>
+    <div class="d-flex justify-content-center mt-4 gap-2">
+        @if ($pengiriman->status != 'Confirmed')
+            <button type="button" id="btn-save-draft" class="btn btn-warning btn-lg">
+                <i class="fa fa-save"></i> Simpan Draft
+            </button>
+            <button type="button" id="btn-confirm-save" class="btn btn-success btn-lg">
+                <i class="fa fa-check"></i> Konfirmasi & Simpan
+            </button>
+            <button type="button" id="btn-cancel" class="btn btn-danger btn-lg">
+                <i class="fa fa-times"></i> Batal
+            </button>
+        @else
+            <button type="button" id="btn-revert-draft" class="btn btn-warning btn-lg">
+                <i class="fa fa-undo"></i> Kembali ke Draft
+            </button>
+            <button type="button" id="btn-delete-confirmed" class="btn btn-danger btn-lg">
+                <i class="fa fa-trash"></i> Hapus Pengiriman
+            </button>
+        @endif
+        <a href="{{ route('pengiriman.index') }}" class="btn btn-secondary btn-lg">
+            <i class="fa fa-list"></i> Lihat Daftar
+        </a>
     </div>
-</div>
 
-@push('scripts')
-<script>
-$(document).ready(function() {
-    // Vehicle selection handler
-    $('#nopol-select').on('change', function() {
-        const nopol = $(this).val();
-        
-        if (nopol) {
-            $('#driver-info').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i> Memuat informasi driver...</div>').show();
-            
-            $.get('/pengiriman/get-vehicle-info/' + nopol)
-                .done(function(data) {
-                    if (data.namadriver) {
-                        $('#driver-info').html(`
-                            <h6><i class="fa fa-user"></i> Informasi Driver</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <strong>Nama Driver:</strong> <span id="driver-name">${data.namadriver}</span>
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>Kontak Driver:</strong> <span id="driver-contact">${data.kontakdriver}</span>
-                                </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <strong>Jenis Kendaraan:</strong> <span id="vehicle-type">${data.jeniskendaraan}</span>
-                                </div>
-                                <div class="col-md-3">
-                                    <strong>Tahun:</strong> <span id="vehicle-year">${data.tahun}</span>
-                                </div>
-                                <div class="col-md-3">
-                                    <strong>Kapasitas:</strong> <span id="vehicle-capacity">${data.kapasitas}</span>
-                                </div>
-                            </div>
-                        `).show();
-                    } else {
-                        $('#driver-info').hide();
+    @push('scripts')
+        <script>
+            function getProductInfo(selectElement) {
+                const kodeproduk = selectElement.value;
+                const row = $(selectElement).closest('tr');
+
+                if (kodeproduk) {
+                    // Check duplicate
+                    let duplicateFound = false;
+                    const qtyToAdd = parseInt(row.find('input[name="kuantitas[]"]').val()) || 1;
+
+                    $('#product-rows tr').not(row).each(function () {
+                        const existingSelect = $(this).find('select[name="produk[]"]');
+                        if (existingSelect.val() === kodeproduk) {
+                            const existingQtyInput = $(this).find('input[name="kuantitas[]"]').first(); // Use .first() to ensure we get the correct input
+                            const currentQty = parseInt(existingQtyInput.val()) || 0;
+                            existingQtyInput.val(currentQty + qtyToAdd);
+
+                            $(this).addClass('highlight-merge');
+                            setTimeout(() => $(this).removeClass('highlight-merge'), 1500);
+
+                            row.remove();
+                            duplicateFound = true;
+                            return false; // Break out of .each loop
+                        }
+                    });
+
+                    if (!duplicateFound) {
+                        $.get('/api/produk/get-produk/' + kodeproduk)
+                            .done(function (d) {
+                                const data = d.data;
+                                row.find('input[name="nama[]"]').val(data.nama);
+                                row.find('input[name="satuan[]"]').val(data.satuan);
+                            })
+                            .fail(function () {
+                                alert('Gagal memuat informasi produk.');
+                            });
                     }
-                })
-                .fail(function() {
-                    $('#driver-info').html('<div class="alert alert-danger">Gagal memuat informasi kendaraan.</div>').show();
+                } else {
+                    row.find('input[name="nama[]"]').val('');
+                    row.find('input[name="satuan[]"]').val('');
+                }
+            }
+
+            function removeProdukRow(btn) {
+                $(btn).closest('tr').remove();
+            }
+
+            function addProdukRow(item = null) {
+                const isConfirmed = "{{ $pengiriman->status }}" === 'Confirmed';
+                const newRow = `
+                                                                                                                        <tr class="product-row new-product-row">
+                                                                                                                            <td>
+                                                                                                                                <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" ${isConfirmed ? 'disabled' : 'required'}>
+                                                                                                                                    <option value="">- Pilih Produk -</option>
+                                                                                                                                    @foreach (\App\Models\Produk::orderBy('nama')->get() as $p)
+                                                                                                                                        <option value="{{ $p->kodeproduk }}" ${item && item.kodeproduk == '{{ $p->kodeproduk }}' ? 'selected' : ''}>
+                                                                                                                                            {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                                                        </option>
+                                                                                                                                    @endforeach
+                                                                                                                                </select>
+                                                                                                                            </td>
+                                                                                                                            <td>
+                                                                                                                                <input type="text" name="nama[]" class="form-control" value="${item ? item.produk.nama : ''}" readonly>
+                                                                                                                            </td>
+                                                                                                                            <td>
+                                                                                                                                <input type="text" name="satuan[]" class="form-control" value="${item ? item.produk.satuan : ''}" readonly>
+                                                                                                                            </td>
+                                                                                                                            <td>
+                                                                                                                                <input type="number" name="kuantitas[]" class="form-control" min="1" value="${item ? item.qty : 1}" ${isConfirmed ? 'readonly' : 'required'}>
+                                                                                                                            </td>
+                                                                                                                            <td>
+                                                                                                                                ${!isConfirmed ? `
+                                                                                                                                    <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                                                        <i class="fa fa-trash"></i> Hapus
+                                                                                                                                    </button>
+                                                                                                                                ` : '-'}
+                                                                                                                            </td>
+                                                                                                                        </tr>
+                                                                                                                    `;
+                $('#product-rows').append(newRow);
+            }
+
+            $(document).ready(function () {
+                // Populate existing items
+                const existingItems = @json($pengiriman->detailkirim->load('produk'));
+                if (existingItems.length > 0) {
+                    existingItems.forEach(item => addProdukRow(item));
+                }
+
+                // Vehicle selection
+                $('#nopol-select').on('change', function () {
+                    const nopol = $(this).val();
+                    if (nopol) {
+                        $.get('/api/pengiriman/get-vehicle-info/' + nopol)
+                            .done(function (d) {
+                                const data = d.data;
+                                if (data.namadriver) {
+                                    $('#namadriver').val(data.namadriver);
+                                }
+                            });
+                    } else {
+                        $('#namadriver').val('');
+                    }
                 });
-        } else {
-            $('#driver-info').hide();
-        }
-    });
 
-    // Initialize with current vehicle
-    $('#nopol-select').trigger('change');
+                // Save actions
+                $('#btn-save-draft, #btn-confirm-save').on('click', function () {
+                    const action = $(this).attr('id') === 'btn-save-draft' ? 'save_draft' : 'confirm_save';
+                    const btnText = $(this).html();
+                    const btn = $(this);
 
-    // Add product form is now handled by ProductRepeaterManager
+                    if (action === 'confirm_save' && !confirm('Apakah Anda yakin ingin mengonfirmasi pengiriman ini?')) {
+                        return;
+                    }
 
-    // Edit and delete handlers are now managed by ProductRepeaterManager
+                    btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
 
-    // Form submission handlers
-    $('#pengiriman-form').on('submit', function() {
-        const submitBtn = $(this).find('button[type="submit"]');
-        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
-    });
-});
-</script>
-@endpush
+                    const formData = {
+                        kodekirim: $('input[name="kodekirim"]').val(),
+                        tglkirim: $('input[name="tglkirim"]').val(),
+                        nopol: $('#nopol-select').val(),
+                        action: action,
+                        produk: [],
+                        kuantitas: []
+                    };
+                    $('#product-rows tr').each(function () {
+                        const p = $(this).find('select[name="produk[]"]').val();
+                        const q = $(this).find('input[name="kuantitas[]"]').val();
+                        if (p) {
+                            formData.produk.push(p);
+                            formData.kuantitas.push(q);
+                        }
+                    });
+
+                    fetch('/api/pengiriman/update/{{ $pengiriman->kodekirim }}', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                        .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                        .then(res => {
+                            if (res.status >= 200 && res.status < 300) {
+                                window.location.href = '/pengiriman';
+                            } else {
+                                btn.prop('disabled', false).html(btnText);
+                                alert(res.body.message || 'Gagal menyimpan pengiriman.');
+                            }
+                        })
+                        .catch(err => {
+                            btn.prop('disabled', false).html(btnText);
+                            alert('Kesalahan jaringan.');
+                        });
+                });
+
+                // Cancel action
+                $('#btn-cancel').on('click', function () {
+                    if (confirm('Apakah Anda yakin ingin membatalkan? Pengiriman draft akan dihapus.')) {
+                        fetch('/api/pengiriman/{{ $pengiriman->kodekirim }}/save-pengiriman', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ action: 'cancel' })
+                        })
+                            .then(() => window.location.href = '/pengiriman');
+                    }
+                });
+
+                // Revert to Draft action
+                $('#btn-revert-draft').on('click', function () {
+                    if (confirm('Apakah Anda yakin ingin mengembalikan pengiriman ini ke status Draft?')) {
+                        const btn = $(this);
+                        btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+
+                        fetch('/api/pengiriman/update-status/{{ $pengiriman->kodekirim }}/revert-to-draft', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                alert(data.message);
+                                window.location.reload();
+                            })
+                            .catch(err => {
+                                btn.prop('disabled', false).html('<i class="fa fa-undo"></i> Kembali ke Draft');
+                                alert('Gagal mengubah status.');
+                            });
+                    }
+                });
+
+                // Delete Confirmed action
+                $('#btn-delete-confirmed').on('click', function () {
+                    if (confirm('Apakah Anda yakin ingin menghapus pengiriman yang sudah dikonfirmasi ini? Tindakan ini tidak dapat dibatalkan.')) {
+                        const btn = $(this);
+                        btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menghapus...');
+
+                        fetch('/api/pengiriman/{{ $pengiriman->kodekirim }}', {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                alert(data.message);
+                                window.location.href = '/pengiriman';
+                            })
+                            .catch(err => {
+                                btn.prop('disabled', false).html('<i class="fa fa-trash"></i> Hapus Pengiriman');
+                                alert('Gagal menghapus pengiriman.');
+                            });
+                    }
+                });
+            });
+        </script>
+    @endpush
 
 @endsection

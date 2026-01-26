@@ -10,12 +10,9 @@ class GudangController extends Controller
 {
     public function index()
     {
-        $gudang = Gudang::all();
+        $gudang = Gudang::paginate(10);
 
-        return response()->json([
-            'message' => 'Data gudang.',
-            'data' => $gudang
-        ], 200);
+        return response()->json($gudang, 200);
     }
 
     public function store(Request $request)
@@ -77,4 +74,3 @@ class GudangController extends Controller
         ], 200);
     }
 }
-

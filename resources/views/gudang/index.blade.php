@@ -1,48 +1,143 @@
 @extends('layouts.app')
 
-@section('title','Gudang')
+@section('title', 'Gudang')
 
 @section('content')
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Data Gudang</h4>
+        <a href="{{ route('gudang.create') }}" class="btn btn-primary">
+            <i class="fa fa-plus me-1"></i> Tambah Gudang
+        </a>
+    </div>
 
-<div class="d-flex justify-content-between mb-3">
-    <h4>Data Gudang</h4>
-    <a href="{{ route('gudang.create') }}" class="btn btn-primary">
-        <i class="fa fa-plus"></i> Tambah Gudang
-    </a>
-</div>
+    <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="gudang-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Kode</th>
+                            <th>Nama Gudang</th>
+                            <th>Kontak</th>
+                            <th>Kapasitas</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gudang-rows">
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                Sedang memuat data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-<table class="table table-bordered datatable">
-    <thead>
-        <tr>
-            <th>Kode</th>
-            <th>Nama Gudang</th>
-            <th>Kontak</th>
-            <th>Kapasitas</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach($gudang as $g)
-        <tr>
-            <td>{{ $g->kodegudang }}</td>
-            <td>{{ $g->namagudang }}</td>
-            <td>{{ $g->kontak }}</td>
-            <td>{{ $g->kapasitas }}</td>
-            <td>
-                <a href="{{ route('gudang.edit',$g->kodegudang) }}" class="btn btn-sm btn-warning">
-                    <i class="fa fa-edit"></i>
-                </a>
-                <form action="{{ route('gudang.destroy',$g->kodegudang) }}" method="POST" style="display:inline;" class="delete-form" data-item-name="{{ $g->namagudang }}">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-danger">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                </form>
-            </td>
-        </tr>
-    @endforeach
-    </tbody>
-</table>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="pagination-info" class="text-muted small">
+                    Showing 0 to 0 of 0 entries
+                </div>
+                <nav id="pagination-nav">
+                    <!-- Pagination buttons will be rendered here -->
+                </nav>
+            </div>
+        </div>
+    </div>
 
+    @push('scripts')
+        <script>
+            let currentPage = 1;
+
+            $(document).ready(function () {
+                loadData(currentPage);
+            });
+
+            function loadData(page = 1) {
+                currentPage = page;
+                $('#gudang-rows').html('<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Sedang memuat data...</td></tr>');
+
+                fetch(`/api/gudang?page=${page}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        const rows = res.data.map(g => {
+                            return `
+                                    <tr>
+                                        <td class="fw-bold text-primary">${g.kodegudang}</td>
+                                        <td>${g.namagudang}</td>
+                                        <td>${g.kontak || '-'}</td>
+                                        <td><span class="badge bg-secondary">${g.kapasitas}</span></td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <a href="/gudang/${g.kodegudang}/edit" class="btn btn-warning btn-sm">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <button type="button" onclick="deleteGudang('${g.kodegudang}')" class="btn btn-danger btn-sm">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                        }).join('');
+
+                        $('#gudang-rows').html(rows || '<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data gudang.</td></tr>');
+
+                        $('#pagination-info').text(`Showing ${res.from || 0} to ${res.to || 0} of ${res.total} entries`);
+                        renderPagination(res);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        $('#gudang-rows').html('<tr><td colspan="5" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
+                    });
+            }
+
+            function renderPagination(data) {
+                if (data.last_page <= 1) {
+                    $('#pagination-nav').empty();
+                    return;
+                }
+
+                let html = '<ul class="pagination pagination-sm mb-0">';
+                html += `<li class="page-item ${data.current_page === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page - 1})">Previous</a></li>`;
+
+                for (let i = 1; i <= data.last_page; i++) {
+                    if (i === 1 || i === data.last_page || (i >= data.current_page - 1 && i <= data.current_page + 1)) {
+                        html += `<li class="page-item ${i === data.current_page ? 'active' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${i})">${i}</a></li>`;
+                    } else if (i === data.current_page - 2 || i === data.current_page + 2) {
+                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                }
+
+                html += `<li class="page-item ${data.current_page === data.last_page ? 'disabled' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page + 1})">Next</a></li>`;
+                html += '</ul>';
+                $('#pagination-nav').html(html);
+            }
+
+            function deleteGudang(kodegudang) {
+                if (confirm(`Apakah Anda yakin ingin menghapus gudang ${kodegudang}?`)) {
+                    fetch(`/api/gudang/${kodegudang}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            alert(data.message);
+                            loadData(currentPage);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Gagal menghapus data.');
+                        });
+                }
+            }
+        </script>
+    @endpush
 @endsection

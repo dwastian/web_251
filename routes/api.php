@@ -8,25 +8,42 @@ use App\Http\Controllers\api\ProdukController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/test', function () {
-    return response()->json(['ok' => true]);
+// AJAX endpoints for pengiriman
+Route::group(["prefix" => "/pengiriman"], function () {
+    Route::get('/', [PengirimanController::class, 'index']);
+    Route::post('/', [PengirimanController::class, 'store']);
+    Route::put('/update/{pengiriman}', [PengirimanController::class, 'update']);
+    Route::get('/{kodekirim}/detail', [DetailKirimController::class, 'index']);
+    Route::post('/{pengiriman}/save-pengiriman', [PengirimanController::class, 'savePengiriman']);
+    Route::put('/update-status/{pengiriman}/revert-to-draft', [PengirimanController::class, 'revertToDraft']);
+    Route::post('/add-product', [PengirimanController::class, 'addProduct']);
+    Route::get('/get-vehicle-info/{nopol}', [PengirimanController::class, 'getVehicleInfo']);
+    Route::put('/update-detail-qty/{detail}', [PengirimanController::class, 'updateDetailQty']);
+    Route::delete('/remove-detail/{detail}', [PengirimanController::class, 'removeDetail']);
+    Route::delete('/{pengiriman}', [PengirimanController::class, 'destroy']);
 });
 
-Route::resource('produk', ProdukController::class);
-Route::resource('gudang', GudangController::class);
-Route::resource('kendaraan', KendaraanController::class);
-Route::resource('pengiriman', PengirimanController::class);
+Route::group(['prefix' => '/produk'], function () {
+    Route::get('/', [ProdukController::class, 'index']);
+    Route::post('/', [ProdukController::class, 'store']);
+    Route::get('/{produk}', [ProdukController::class, 'show']);
+    Route::post('/update/{produk}', [ProdukController::class, 'update']);
+    Route::delete('/{produk}', [ProdukController::class, 'destroy']);
+    Route::get('/get-produk/{id}', [ProdukController::class, 'getProduk']);
+});
 
-// AJAX endpoints for pengiriman
-Route::get('pengiriman/get-vehicle-info/{nopol}', [PengirimanController::class, 'getVehicleInfo']);
-Route::post('pengiriman/add-product', [PengirimanController::class, 'addProduct']);
-Route::put('pengiriman/update-detail-qty/{detail}', [PengirimanController::class, 'updateDetailQty']);
-Route::delete('pengiriman/remove-detail/{detail}', [PengirimanController::class, 'removeDetail']);
-Route::post('pengiriman/{pengiriman}/save-pengiriman', [PengirimanController::class, 'savePengiriman']);
-Route::get('produk/get-produk/{id}', [ProdukController::class, 'getProduk']);
+Route::group(['prefix' => '/kendaraan'], function () {
+    Route::get('/', [KendaraanController::class, 'index']);
+    Route::post('/', [KendaraanController::class, 'store']);
+    Route::get('/{kendaraan}', [KendaraanController::class, 'show']);
+    Route::post('/update/{kendaraan}', [KendaraanController::class, 'update']); // Using POST for potential multipart/form-data with file upload
+    Route::delete('/{kendaraan}', [KendaraanController::class, 'destroy']);
+});
 
-// Detail Kirim hanya untuk store, update, destroy
-Route::resource('detailkirim', DetailKirimController::class)->only(['store', 'update', 'destroy']);
-
-// Pengiriman → Detail (custom route untuk melihat detail dari master)
-Route::get('pengiriman/{kodekirim}/detail', [DetailKirimController::class, 'index'])->name('pengiriman.detail.index');
+Route::group(['prefix' => '/gudang'], function () {
+    Route::get('/', [GudangController::class, 'index']);
+    Route::post('/', [GudangController::class, 'store']);
+    Route::get('/{gudang}', [GudangController::class, 'show']);
+    Route::put('/{gudang}', [GudangController::class, 'update']);
+    Route::delete('/{gudang}', [GudangController::class, 'destroy']);
+});

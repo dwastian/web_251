@@ -11,12 +11,9 @@ class KendaraanController extends Controller
 {
     public function index()
     {
-        $kendaraan = Kendaraan::all();
+        $kendaraan = Kendaraan::paginate(10);
 
-        return response()->json([
-            'message' => 'Data kendaraan.',
-            'data' => $kendaraan
-        ], 200);
+        return response()->json($kendaraan, 200);
     }
 
     public function store(Request $request)
@@ -83,7 +80,6 @@ class KendaraanController extends Controller
                 if ($kendaraan->foto) {
                     Storage::disk('public')->delete($kendaraan->foto);
                 }
-
             } catch (\Exception $e) {
                 return response()->json([
                     'message' => 'Gagal mengupload foto.',
@@ -121,4 +117,3 @@ class KendaraanController extends Controller
         ], 200);
     }
 }
-

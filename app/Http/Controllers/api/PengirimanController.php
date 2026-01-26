@@ -14,12 +14,11 @@ class PengirimanController extends Controller
 {
     public function index()
     {
-        $pengiriman = MasterKirim::with('kendaraan')->latest()->get();
+        $pengiriman = MasterKirim::with('kendaraan')
+            ->orderBy('updated_at', 'desc')
+            ->paginate(10);
 
-        return response()->json([
-            'message' => 'Daftar pengiriman.',
-            'data' => $pengiriman
-        ], 200);
+        return response()->json($pengiriman, 200);
     }
 
     public function store(Request $request)
@@ -71,7 +70,6 @@ class PengirimanController extends Controller
                 'message' => 'Pengiriman berhasil dibuat.',
                 'data' => $pengiriman
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -82,36 +80,64 @@ class PengirimanController extends Controller
         }
     }
 
-    public function show(MasterKirim $pengiriman)
-    {
-        $pengiriman->load(['kendaraan', 'detailkirim.produk']);
-
-        return response()->json([
-            'message' => 'Detail pengiriman.',
-            'data' => $pengiriman
-        ], 200);
-    }
-
     public function update(Request $request, MasterKirim $pengiriman)
     {
         $validated = $request->validate([
-            'kodekirim' => 'required|unique:masterkirim,kodekirim,' . $pengiriman->kodekirim . ',kodekirim',
+            'kodekirim' => ['required', \Illuminate\Validation\Rule::unique('masterkirim', 'kodekirim')->ignore($pengiriman->kodekirim, 'kodekirim')],
             'tglkirim' => 'required|date',
             'nopol' => 'required|exists:kendaraan,nopol',
             'catatan' => 'nullable|string|max:500',
+            'produk' => 'nullable|array',
+            'produk.*' => 'exists:produk,kodeproduk',
+            'kuantitas' => 'nullable|array',
+            'kuantitas.*' => 'integer|min:1',
+            'action' => 'nullable|in:save_draft,confirm_save'
         ]);
 
         try {
-            DB::transaction(function () use ($pengiriman, $validated) {
-                $pengiriman->update($validated);
-            });
+            DB::beginTransaction();
+
+            // 1. Delete existing details BEFORE updating master record
+            // This avoids integrity constraint violations if kodekirim is changed
+            $pengiriman->detailkirim()->delete();
+
+            $totalQty = 0;
+            if (isset($validated['produk'])) {
+                foreach ($validated['produk'] as $i => $kode) {
+                    $qty = $validated['kuantitas'][$i] ?? 0;
+                    if ($qty > 0) {
+                        DetailKirim::create([
+                            'kodekirim' => $validated['kodekirim'], // Use the NEW kodekirim
+                            'kodeproduk' => $kode,
+                            'qty' => $qty
+                        ]);
+                        $totalQty += $qty;
+                    }
+                }
+            }
+
+            // 2. Update master record
+            // Get raw status to avoid ucfirst accessor issues during update logic if needed
+            $currentStatus = strtolower($pengiriman->getRawOriginal('status'));
+            $newStatus = $validated['action'] == 'confirm_save' ? 'Confirmed' : $currentStatus;
+
+            $pengiriman->update([
+                'kodekirim' => $validated['kodekirim'],
+                'tglkirim' => $validated['tglkirim'],
+                'nopol' => $validated['nopol'],
+                'catatan' => $validated['catatan'] ?? null,
+                'status' => $newStatus,
+                'totalqty' => $totalQty
+            ]);
+
+            DB::commit();
 
             return response()->json([
                 'message' => 'Pengiriman berhasil diupdate.',
                 'data' => $pengiriman
             ], 200);
-
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'Gagal update pengiriman.',
                 'error' => $e->getMessage()
@@ -119,19 +145,42 @@ class PengirimanController extends Controller
         }
     }
 
+    public function revertToDraft(MasterKirim $pengiriman)
+    {
+        try {
+            $pengiriman->update(['status' => 'draft']);
+            return response()->json([
+                'message' => 'Status pengiriman berhasil dikembalikan ke Draft.',
+                'data' => $pengiriman
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengubah status pengiriman.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function destroy(MasterKirim $pengiriman)
     {
-        if ($pengiriman->detailkirim()->exists()) {
+        try {
+            DB::beginTransaction();
+            // Delete details first
+            $pengiriman->detailkirim()->delete();
+            // Delete master
+            $pengiriman->delete();
+            DB::commit();
+
             return response()->json([
-                'message' => 'Tidak dapat menghapus. Pengiriman memiliki detail items.'
-            ], 409);
+                'message' => 'Pengiriman berhasil dihapus.'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal menghapus pengiriman.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $pengiriman->delete();
-
-        return response()->json([
-            'message' => 'Pengiriman berhasil dihapus.'
-        ], 200);
     }
 
     public function getVehicleInfo($nopol)
@@ -169,7 +218,7 @@ class PengirimanController extends Controller
                             'message' => 'Minimal 1 item diperlukan.'
                         ], 422);
                     }
-                    $pengiriman->update(['status' => 'confirmed']);
+                    $pengiriman->update(['status' => 'Confirmed']);
                     $msg = 'Pengiriman dikonfirmasi.';
                     break;
 
@@ -192,7 +241,6 @@ class PengirimanController extends Controller
                 'message' => $msg,
                 'data' => $pengiriman
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -230,7 +278,6 @@ class PengirimanController extends Controller
             return response()->json([
                 'message' => 'Produk ditambahkan.'
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal menambah produk.',
@@ -256,7 +303,6 @@ class PengirimanController extends Controller
             return response()->json([
                 'message' => 'Qty diupdate.'
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal update qty.',
@@ -279,7 +325,6 @@ class PengirimanController extends Controller
             return response()->json([
                 'message' => 'Item dihapus.'
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal hapus item.',
@@ -288,4 +333,3 @@ class PengirimanController extends Controller
         }
     }
 }
-

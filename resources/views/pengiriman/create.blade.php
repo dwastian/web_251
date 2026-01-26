@@ -65,6 +65,7 @@
                 transform: translateY(-20px);
                 opacity: 0;
             }
+
             100% {
                 transform: translateY(0);
                 opacity: 1;
@@ -77,8 +78,15 @@
         }
 
         @keyframes pulseMerge {
-            0%, 100% { background-color: #fff3cd; }
-            50% { background-color: #ffeaa7; }
+
+            0%,
+            100% {
+                background-color: #fff3cd;
+            }
+
+            50% {
+                background-color: #ffeaa7;
+            }
         }
     </style>
 @endpush
@@ -92,8 +100,7 @@
         </a>
     </div>
 
-    <form id="pengiriman-form" method="POST" action="{{ route('pengiriman.store') }}">
-        @csrf
+    <form id="pengiriman-form">
 
         <!-- Informasi Pengiriman -->
         <div class="card mb-5">
@@ -201,7 +208,7 @@
                     let duplicateFound = false;
                     const qtyToAdd = parseInt(row.find('input[name="kuantitas[]"]').val()) || 1;
 
-                    $('#product-rows tr').not(row).each(function() {
+                    $('#product-rows tr').not(row).each(function () {
                         const existingSelect = $(this).find('select[name="produk[]"]');
                         if (existingSelect.val() === kodeproduk) {
                             // Found duplicate - merge quantities
@@ -223,12 +230,12 @@
 
                     if (!duplicateFound) {
                         // No duplicate found, load product info
-                        $.get('/produk/get-produk/' + kodeproduk)
-                            .done(function(data) {
+                        $.get('/api/produk/get-produk/' + kodeproduk)
+                            .done(function (data) {
                                 row.find('input[name="nama[]"]').val(data.data.nama);
                                 row.find('input[name="satuan[]"]').val(data.data.satuan);
                             })
-                            .fail(function() {
+                            .fail(function () {
                                 alert('Gagal memuat informasi produk.');
                             });
                     }
@@ -245,53 +252,53 @@
             function addProdukRow() {
                 // Always add a new row at the top - users can select products and quantities as needed
                 const newRow = `
-                    <tr class="product-row new-product-row">
-                        <td>
-                            <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
-                                <option value="">- Pilih Produk -</option>
-                                @foreach ($produk as $p)
-                                    <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
-                                        {{ $p->kodeproduk }} - {{ $p->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" name="nama[]" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" name="satuan[]" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
-                        </td>
-                        <td>
-                                <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
-                                    <i class="fa fa-trash"></i> Hapus
-                                </button>
-                            </td>
-                    </tr>
-                `;
+                                                                                            <tr class="product-row new-product-row">
+                                                                                                <td>
+                                                                                                    <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
+                                                                                                        <option value="">- Pilih Produk -</option>
+                                                                                                        @foreach ($produk as $p)
+                                                                                                            <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
+                                                                                                                {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                            </option>
+                                                                                                        @endforeach
+                                                                                                    </select>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <input type="text" name="nama[]" class="form-control" readonly>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <input type="text" name="satuan[]" class="form-control" readonly>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                        <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                            <i class="fa fa-trash"></i> Hapus
+                                                                                                        </button>
+                                                                                                    </td>
+                                                                                            </tr>
+                                                                                        `;
                 // Insert at the top instead of bottom
                 $('#product-rows').prepend(newRow);
             }
 
-            $(document).ready(function() {
+            $(document).ready(function () {
                 // Vehicle selection handler
-                $('#nopol-select').on('change', function() {
+                $('#nopol-select').on('change', function () {
                     const nopol = $(this).val();
 
                     if (nopol) {
                         // AJAX get vehicle info
-                        $.get('/pengiriman/get-vehicle-info/' + nopol)
-                            .done(function(data) {
-                                if (data.namadriver) {
-                                    $('#namadriver').val(data.namadriver);
+                        $.get('/api/pengiriman/get-vehicle-info/' + nopol)
+                            .done(function (data) {
+                                if (data.data.namadriver) {
+                                    $('#namadriver').val(data.data.namadriver);
                                 } else {
 
                                 }
                             })
-                            .fail(function() {
+                            .fail(function () {
                                 alert('Gagal memuat informasi kendaraan.');
                             });
                     } else {
@@ -300,9 +307,66 @@
                 });
 
                 // Form submission handlers
-                $('#pengiriman-form').on('submit', function() {
+                $('#pengiriman-form').on('submit', function (e) {
+                    e.preventDefault();
+
                     const submitBtn = $(this).find('button[type="submit"]');
                     submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
+
+                    // Collect form data
+                    const formData = {
+                        kodekirim: $('input[name="kodekirim"]').val(),
+                        tglkirim: $('input[name="tglkirim"]').val(),
+                        nopol: $('#nopol-select').val(),
+                        produk: [],
+                        kuantitas: []
+                    };
+
+                    // Collect product data
+                    $('#product-rows tr').each(function () {
+                        const produk = $(this).find('select[name="produk[]"]').val();
+                        const qty = $(this).find('input[name="kuantitas[]"]').val();
+                        if (produk) {
+                            formData.produk.push(produk);
+                            formData.kuantitas.push(parseInt(qty) || 1);
+                        }
+                    });
+
+                    fetch('/api/pengiriman', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                        .then(({ status, body }) => {
+                            if (status >= 200 && status < 300) {
+                                // Success - redirect to /pengiriman
+                                window.location.href = '/pengiriman';
+                            } else {
+                                // Error
+                                submitBtn.prop('disabled', false).html('<i class="fa fa-save"></i> Buat Pengiriman');
+
+                                if (body.errors) {
+                                    // Validation errors
+                                    let errorMsg = 'Terjadi kesalahan:\n';
+                                    Object.keys(body.errors).forEach(key => {
+                                        errorMsg += '- ' + body.errors[key].join('\n- ') + '\n';
+                                    });
+                                    alert(errorMsg);
+                                } else {
+                                    alert(body.message || 'Gagal membuat pengiriman.');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            submitBtn.prop('disabled', false).html('<i class="fa fa-save"></i> Buat Pengiriman');
+                            alert('Terjadi kesalahan jaringan. Silakan coba lagi.');
+                            console.error('Error:', error);
+                        });
                 });
             });
         </script>

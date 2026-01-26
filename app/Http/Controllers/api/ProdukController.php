@@ -11,11 +11,8 @@ class ProdukController extends Controller
 {
     public function index()
     {
-        $produk = Produk::with('gudang')->get();
-        return response()->json([
-            'success' => true,
-            'data' => $produk
-        ]);
+        $produk = Produk::with('gudang')->paginate(10);
+        return response()->json($produk);
     }
 
     public function store(Request $request)
@@ -110,4 +107,3 @@ class ProdukController extends Controller
         ], 404);
     }
 }
-

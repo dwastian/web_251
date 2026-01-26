@@ -1,58 +1,157 @@
 @extends('layouts.app')
 
-@section('title','Kendaraan')
+@section('title', 'Kendaraan')
 
 @section('content')
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Data Kendaraan</h4>
+        <a href="{{ route('kendaraan.create') }}" class="btn btn-primary">
+            <i class="fa fa-plus me-1"></i> Tambah Kendaraan
+        </a>
+    </div>
 
-<div class="d-flex justify-content-between mb-3">
-    <h4>Data Kendaraan</h4>
-    <a href="{{ route('kendaraan.create') }}" class="btn btn-primary">
-        <i class="fa fa-plus"></i> Tambah Kendaraan
-    </a>
-</div>
+    <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="kendaraan-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nopol</th>
+                            <th>Nama Kendaraan</th>
+                            <th>Jenis</th>
+                            <th>Driver</th>
+                            <th>Tahun</th>
+                            <th>Kapasitas</th>
+                            <th>Foto</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kendaraan-rows">
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                Sedang memuat data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-<table class="table table-bordered datatable">
-    <thead>
-        <tr>
-            <th>Nopol</th>
-            <th>Nama Kendaraan</th>
-            <th>Jenis Kendaraan</th>
-            <th>Nama Driver</th>
-            <th>Kontak Driver</th>
-            <th>Tahun</th>
-            <th>Kapasitas</th>
-            <th>Foto</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach($kendaraan as $k)
-        <tr>
-            <td>{{ $k->nopol }}</td>
-            <td>{{ $k->namakendaraan }}</td>
-            <td>{{ $k->jeniskendaraan }}</td>
-            <td>{{ $k->namadriver }}</td>
-            <td>{{ $k->kontakdriver }}</td>
-            <td>{{ $k->tahun }}</td>
-            <td>{{ $k->kapasitas }}</td>
-            <td>
-                @if($k->foto)
-                    <img src="{{ asset('storage/'.$k->foto) }}" height="50">
-                @else
-                    <span class="text-muted">Tidak ada</span>
-                @endif
-            </td>
-            <td>
-                <a href="{{ route('kendaraan.edit',$k->nopol) }}" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></a>
-                <form action="{{ route('kendaraan.destroy',$k->nopol) }}" method="POST" style="display:inline;" class="delete-form" data-item-name="{{ $k->namakendaraan }}">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button>
-                </form>
-            </td>
-        </tr>
-    @endforeach
-    </tbody>
-</table>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="pagination-info" class="text-muted small">
+                    Showing 0 to 0 of 0 entries
+                </div>
+                <nav id="pagination-nav">
+                    <!-- Pagination buttons will be rendered here -->
+                </nav>
+            </div>
+        </div>
+    </div>
 
+    @push('scripts')
+        <script>
+            let currentPage = 1;
+
+            $(document).ready(function () {
+                loadData(currentPage);
+            });
+
+            function loadData(page = 1) {
+                currentPage = page;
+                $('#kendaraan-rows').html('<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Sedang memuat data...</td></tr>');
+
+                fetch(`/api/kendaraan?page=${page}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        const rows = res.data.map(k => {
+                            const foto = k.foto
+                                ? `<img src="/storage/${k.foto}" height="50" class="rounded shadow-sm border" style="object-fit: cover; width: 50px;">`
+                                : `<span class="badge bg-light text-muted border py-2">No Photo</span>`;
+
+                            return `
+                                    <tr>
+                                        <td class="fw-bold text-primary">${k.nopol}</td>
+                                        <td>${k.namakendaraan}</td>
+                                        <td><span class="badge bg-info text-dark">${k.jeniskendaraan}</span></td>
+                                        <td>
+                                            <div class="fw-bold">${k.namadriver}</div>
+                                            <small class="text-muted">${k.kontakdriver || '-'}</small>
+                                        </td>
+                                        <td>${k.tahun}</td>
+                                        <td><span class="badge bg-secondary">${k.kapasitas}</span></td>
+                                        <td>${foto}</td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <a href="/kendaraan/${k.nopol}/edit" class="btn btn-warning btn-sm">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <button type="button" onclick="deleteKendaraan('${k.nopol}')" class="btn btn-danger btn-sm">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                        }).join('');
+
+                        $('#kendaraan-rows').html(rows || '<tr><td colspan="8" class="text-center py-4 text-muted">Tidak ada data kendaraan.</td></tr>');
+
+                        $('#pagination-info').text(`Showing ${res.from || 0} to ${res.to || 0} of ${res.total} entries`);
+                        renderPagination(res);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        $('#kendaraan-rows').html('<tr><td colspan="8" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
+                    });
+            }
+
+            function renderPagination(data) {
+                if (data.last_page <= 1) {
+                    $('#pagination-nav').empty();
+                    return;
+                }
+
+                let html = '<ul class="pagination pagination-sm mb-0">';
+                html += `<li class="page-item ${data.current_page === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page - 1})">Previous</a></li>`;
+
+                for (let i = 1; i <= data.last_page; i++) {
+                    // Optimized simple pagination
+                    if (i === 1 || i === data.last_page || (i >= data.current_page - 1 && i <= data.current_page + 1)) {
+                        html += `<li class="page-item ${i === data.current_page ? 'active' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${i})">${i}</a></li>`;
+                    } else if (i === data.current_page - 2 || i === data.current_page + 2) {
+                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                }
+
+                html += `<li class="page-item ${data.current_page === data.last_page ? 'disabled' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page + 1})">Next</a></li>`;
+                html += '</ul>';
+                $('#pagination-nav').html(html);
+            }
+
+            function deleteKendaraan(nopol) {
+                if (confirm(`Apakah Anda yakin ingin menghapus kendaraan ${nopol}?`)) {
+                    fetch(`/api/kendaraan/${nopol}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            alert(data.message);
+                            loadData(currentPage);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Gagal menghapus data.');
+                        });
+                }
+            }
+        </script>
+    @endpush
 @endsection
