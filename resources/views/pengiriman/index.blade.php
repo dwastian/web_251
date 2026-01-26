@@ -119,7 +119,7 @@
                             let actions = `
                                                                 <div class="btn-group" role="group">
                                                                     ${p.status !== 'Confirmed' ? `
-                                                                        <a href="/pengiriman/${p.kodekirim}/edit" class="btn btn-warning btn-sm">
+                                                                        <a href="/pengiriman/${p.kodekirim}/edit" class="btn btn-success btn-sm">
                                                                             <i class="fa fa-edit"></i>
                                                                         </a>
                                                                     ` : ''}
