@@ -49,6 +49,20 @@ class PengirimanController extends Controller
             $totalQty = 0;
 
             if (!empty($validated['produk'])) {
+                $kendaraan = Kendaraan::find($validated['nopol']);
+                foreach ($validated['produk'] as $i => $kode) {
+                    $qty = $validated['kuantitas'][$i] ?? 0;
+                    if ($qty > 0) {
+                        $totalQty += $qty;
+                    }
+                }
+
+                if ($kendaraan && $kendaraan->kapasitas > 0 && $totalQty > $kendaraan->kapasitas) {
+                    return response()->json([
+                        'message' => "Total kuantitas ($totalQty) melebihi kapasitas kendaraan ({$kendaraan->kapasitas} {$kendaraan->satuan})."
+                    ], 422);
+                }
+
                 foreach ($validated['produk'] as $i => $kode) {
                     $qty = $validated['kuantitas'][$i] ?? 0;
                     if ($qty > 0) {
@@ -57,7 +71,6 @@ class PengirimanController extends Controller
                             'kodeproduk' => $kode,
                             'qty' => $qty
                         ]);
-                        $totalQty += $qty;
                     }
                 }
             }
@@ -103,15 +116,28 @@ class PengirimanController extends Controller
 
             $totalQty = 0;
             if (isset($validated['produk'])) {
+                $kendaraan = Kendaraan::find($validated['nopol']);
+                foreach ($validated['produk'] as $i => $kode) {
+                    $qty = $validated['kuantitas'][$i] ?? 0;
+                    if ($qty > 0) {
+                        $totalQty += $qty;
+                    }
+                }
+
+                if ($kendaraan && $kendaraan->kapasitas > 0 && $totalQty > $kendaraan->kapasitas) {
+                    return response()->json([
+                        'message' => "Total kuantitas ($totalQty) melebihi kapasitas kendaraan ({$kendaraan->kapasitas} {$kendaraan->satuan})."
+                    ], 422);
+                }
+
                 foreach ($validated['produk'] as $i => $kode) {
                     $qty = $validated['kuantitas'][$i] ?? 0;
                     if ($qty > 0) {
                         DetailKirim::create([
-                            'kodekirim' => $validated['kodekirim'], // Use the NEW kodekirim
+                            'kodekirim' => $validated['kodekirim'],
                             'kodeproduk' => $kode,
                             'qty' => $qty
                         ]);
-                        $totalQty += $qty;
                     }
                 }
             }
@@ -261,6 +287,18 @@ class PengirimanController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
+                $master = MasterKirim::with('kendaraan')->where('kodekirim', $validated['kodekirim'])->first();
+                $currentTotal = DetailKirim::where('kodekirim', $validated['kodekirim'])->sum('qty');
+
+                if ($master && $master->kendaraan && $master->kendaraan->kapasitas > 0) {
+                    if ($currentTotal >= $master->kendaraan->kapasitas) {
+                        throw new \Exception("Kapasitas kendaraan sudah penuh.");
+                    }
+                    if ($currentTotal + $validated['qty'] > $master->kendaraan->kapasitas) {
+                        throw new \Exception("Kuantitas melebihi sisa kapasitas kendaraan.");
+                    }
+                }
+
                 $exist = DetailKirim::where('kodekirim', $validated['kodekirim'])
                     ->where('kodeproduk', $validated['kodeproduk'])
                     ->first();
@@ -294,9 +332,20 @@ class PengirimanController extends Controller
 
         try {
             DB::transaction(function () use ($detail, $validated) {
+                $master = MasterKirim::with('kendaraan')->where('kodekirim', $detail->kodekirim)->first();
+                $totalOther = DetailKirim::where('kodekirim', $detail->kodekirim)
+                    ->where('id', '!=', $detail->id)
+                    ->sum('qty');
+
+                if ($master && $master->kendaraan && $master->kendaraan->kapasitas > 0) {
+                    if ($totalOther + $validated['qty'] > $master->kendaraan->kapasitas) {
+                        throw new \Exception("Kuantitas melebihi kapasitas kendaraan.");
+                    }
+                }
+
                 $detail->update($validated);
 
-                $total = DetailKirim::where('kodekirim', $detail->kodekirim)->sum('qty');
+                $total = $totalOther + $validated['qty'];
                 MasterKirim::where('kodekirim', $detail->kodekirim)->update(['totalqty' => $total]);
             });
 

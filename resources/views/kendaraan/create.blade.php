@@ -57,11 +57,16 @@
                         <div class="invalid-feedback" id="error-kontakdriver"></div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <label class="form-label">Kapasitas</label>
-                        <input type="text" name="kapasitas" class="form-control" placeholder="Contoh: 5 Ton, 10 CBM"
-                            required>
+                        <input type="number" name="kapasitas" class="form-control" placeholder="Contoh: 5, 10" required>
                         <div class="invalid-feedback" id="error-kapasitas"></div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Satuan</label>
+                        <input type="text" name="satuan" class="form-control" placeholder="Contoh: Ton, CBM, Kg" required>
+                        <div class="invalid-feedback" id="error-satuan"></div>
                     </div>
 
                     <div class="col-md-6">

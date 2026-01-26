@@ -22,6 +22,7 @@ class Kendaraan extends Model
         'kontakdriver',
         'tahun',
         'kapasitas',
+        'satuan',
         'foto',
     ];
 

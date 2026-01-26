@@ -139,8 +139,9 @@
                         <select name="nopol" class="form-control" id="nopol-select" {{ $pengiriman->status == 'Confirmed' ? 'disabled' : 'required' }}>
                             <option value="">- Pilih Kendaraan -</option>
                             @foreach ($kendaraan as $k)
-                                <option value="{{ $k->nopol }}" {{ $pengiriman->nopol == $k->nopol ? 'selected' : '' }}>
-                                    {{ $k->nopol }} - {{ $k->namakendaraan }} ({{ $k->kapasitas }})
+                                <option value="{{ $k->nopol }}" data-capacity="{{ $k->kapasitas }}" data-unit="{{ $k->satuan }}"
+                                    {{ $pengiriman->nopol == $k->nopol ? 'selected' : '' }}>
+                                    {{ $k->nopol }} - {{ $k->namakendaraan }} ({{ $k->kapasitas }} {{ $k->satuan }})
                                 </option>
                             @endforeach
                         </select>
@@ -224,11 +225,28 @@
                         <!-- Items will be populated by JS -->
                     </tbody>
                     <tfoot>
+                        <tr class="bg-light fw-bold">
+                            <td colspan="3" class="text-end">Total Kuantitas Kirim:</td>
+                            <td class="text-center"><span id="total-qty-display">0</span></td>
+                            <td></td>
+                        </tr>
+                        <tr id="capacity-warning-row" class="table-danger d-none">
+                            <td colspan="5" class="text-center">
+                                <i class="fa fa-exclamation-triangle"></i>
+                                <strong>Peringatan!</strong> Total kuantitas (<span id="warn-total-qty">0</span>)
+                                melebihi kapasitas kendaraan (<span id="warn-capacity">0</span> <span
+                                    id="warn-unit"></span>).
+                            </td>
+                        </tr>
                         @if ($pengiriman->status != 'Confirmed')
                             <tr>
                                 <td colspan="5">
-                                    <div class="flex w-full justify-end">
-                                        <button type="button" onclick="addProdukRow()" class="btn btn-success btn-sm">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="text-muted small">
+                                            Kapasitas Kendaraan: <span id="vehicle-capacity-info">-</span>
+                                        </div>
+                                        <button type="button" id="btn-add-row" onclick="addProdukRow()"
+                                            class="btn btn-success btn-sm">
                                             <i class="fa fa-plus"></i> Tambah Baris
                                         </button>
                                     </div>
@@ -311,40 +329,98 @@
 
             function removeProdukRow(btn) {
                 $(btn).closest('tr').remove();
+                validateCapacity();
             }
 
+            function validateCapacity() {
+                let totalQty = 0;
+                $('input[name="kuantitas[]"]').each(function () {
+                    totalQty += parseInt($(this).val()) || 0;
+                });
+
+                $('#total-qty-display').text(totalQty);
+
+                const selectedVehicle = $('#nopol-select option:selected');
+                const capacity = parseInt(selectedVehicle.data('capacity')) || 0;
+                const unit = selectedVehicle.data('unit') || '';
+
+                if (capacity > 0) {
+                    $('#vehicle-capacity-info').text(`${capacity} ${unit}`);
+                    if (totalQty >= capacity) {
+                        $('#capacity-warning-row').removeClass('d-none');
+                        $('#warn-total-qty').text(totalQty);
+                        $('#warn-capacity').text(capacity);
+                        $('#warn-unit').text(unit);
+                        $('#btn-add-row').prop('disabled', true);
+
+                        if (totalQty > capacity) {
+                            $('#btn-confirm-save, #btn-save-draft').prop('disabled', true);
+                        } else {
+                            $('#btn-confirm-save, #btn-save-draft').prop('disabled', false);
+                        }
+                    } else {
+                        $('#capacity-warning-row').addClass('d-none');
+                        $('#btn-add-row').prop('disabled', false);
+                        $('#btn-confirm-save, #btn-save-draft').prop('disabled', false);
+                    }
+                } else {
+                    $('#vehicle-capacity-info').text('-');
+                    $('#capacity-warning-row').addClass('d-none');
+                    $('#btn-add-row').prop('disabled', false);
+                    $('#btn-confirm-save, #btn-save-draft').prop('disabled', false);
+                }
+            }
+
+            $(document).on('input', 'input[name="kuantitas[]"]', function () {
+                validateCapacity();
+            });
+
             function addProdukRow(item = null) {
+                // Check current capacity before adding manually
+                if (!item) {
+                    const selectedVehicle = $('#nopol-select option:selected');
+                    const capacity = parseInt(selectedVehicle.data('capacity')) || 0;
+                    let totalQty = 0;
+                    $('input[name="kuantitas[]"]').each(function () {
+                        totalQty += parseInt($(this).val()) || 0;
+                    });
+
+                    if (capacity > 0 && totalQty >= capacity) {
+                        alert('Kapasitas kendaraan sudah tercapai!');
+                        return;
+                    }
+                }
                 const isConfirmed = "{{ $pengiriman->status }}" === 'Confirmed';
                 const newRow = `
-                                                                                                                        <tr class="product-row new-product-row">
-                                                                                                                            <td>
-                                                                                                                                <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" ${isConfirmed ? 'disabled' : 'required'}>
-                                                                                                                                    <option value="">- Pilih Produk -</option>
-                                                                                                                                    @foreach (\App\Models\Produk::orderBy('nama')->get() as $p)
-                                                                                                                                        <option value="{{ $p->kodeproduk }}" ${item && item.kodeproduk == '{{ $p->kodeproduk }}' ? 'selected' : ''}>
-                                                                                                                                            {{ $p->kodeproduk }} - {{ $p->nama }}
-                                                                                                                                        </option>
-                                                                                                                                    @endforeach
-                                                                                                                                </select>
-                                                                                                                            </td>
-                                                                                                                            <td>
-                                                                                                                                <input type="text" name="nama[]" class="form-control" value="${item ? item.produk.nama : ''}" readonly>
-                                                                                                                            </td>
-                                                                                                                            <td>
-                                                                                                                                <input type="text" name="satuan[]" class="form-control" value="${item ? item.produk.satuan : ''}" readonly>
-                                                                                                                            </td>
-                                                                                                                            <td>
-                                                                                                                                <input type="number" name="kuantitas[]" class="form-control" min="1" value="${item ? item.qty : 1}" ${isConfirmed ? 'readonly' : 'required'}>
-                                                                                                                            </td>
-                                                                                                                            <td>
-                                                                                                                                ${!isConfirmed ? `
-                                                                                                                                    <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
-                                                                                                                                        <i class="fa fa-trash"></i> Hapus
-                                                                                                                                    </button>
-                                                                                                                                ` : '-'}
-                                                                                                                            </td>
-                                                                                                                        </tr>
-                                                                                                                    `;
+                                                                                                                                <tr class="product-row new-product-row">
+                                                                                                                                    <td>
+                                                                                                                                        <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" ${isConfirmed ? 'disabled' : 'required'}>
+                                                                                                                                            <option value="">- Pilih Produk -</option>
+                                                                                                                                            @foreach (\App\Models\Produk::orderBy('nama')->get() as $p)
+                                                                                                                                                <option value="{{ $p->kodeproduk }}" ${item && item.kodeproduk == '{{ $p->kodeproduk }}' ? 'selected' : ''}>
+                                                                                                                                                    {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                                                                </option>
+                                                                                                                                            @endforeach
+                                                                                                                                        </select>
+                                                                                                                                    </td>
+                                                                                                                                    <td>
+                                                                                                                                        <input type="text" name="nama[]" class="form-control" value="${item ? item.produk.nama : ''}" readonly>
+                                                                                                                                    </td>
+                                                                                                                                    <td>
+                                                                                                                                        <input type="text" name="satuan[]" class="form-control" value="${item ? item.produk.satuan : ''}" readonly>
+                                                                                                                                    </td>
+                                                                                                                                    <td>
+                                                                                                                                        <input type="number" name="kuantitas[]" class="form-control" min="1" value="${item ? item.qty : 1}" ${isConfirmed ? 'readonly' : 'required'}>
+                                                                                                                                    </td>
+                                                                                                                                    <td>
+                                                                                                                                        ${!isConfirmed ? `
+                                                                                                                                            <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                                                                <i class="fa fa-trash"></i> Hapus
+                                                                                                                                            </button>
+                                                                                                                                        ` : '-'}
+                                                                                                                                    </td>
+                                                                                                                                </tr>
+                                                                                                                            `;
                 $('#product-rows').append(newRow);
             }
 
@@ -354,10 +430,12 @@
                 if (existingItems.length > 0) {
                     existingItems.forEach(item => addProdukRow(item));
                 }
+                validateCapacity();
 
                 // Vehicle selection
                 $('#nopol-select').on('change', function () {
                     const nopol = $(this).val();
+                    validateCapacity();
                     if (nopol) {
                         $.get('/api/pengiriman/get-vehicle-info/' + nopol)
                             .done(function (d) {

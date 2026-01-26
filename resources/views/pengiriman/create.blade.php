@@ -133,8 +133,9 @@
                         <select name="nopol" class="form-control" id="nopol-select" required>
                             <option value="">- Pilih Kendaraan -</option>
                             @foreach ($kendaraan as $k)
-                                <option value="{{ $k->nopol }}" {{ old('nopol') == $k->nopol ? 'selected' : '' }}>
-                                    {{ $k->nopol }} - {{ $k->namakendaraan }} ({{ $k->kapasitas }})
+                                <option value="{{ $k->nopol }}" data-capacity="{{ $k->kapasitas }}" data-unit="{{ $k->satuan }}"
+                                    {{ old('nopol') == $k->nopol ? 'selected' : '' }}>
+                                    {{ $k->nopol }} - {{ $k->namakendaraan }} ({{ $k->kapasitas }} {{ $k->satuan }})
                                 </option>
                             @endforeach
                         </select>
@@ -173,10 +174,27 @@
 
                     </tbody>
                     <tfoot>
+                        <tr class="bg-light fw-bold">
+                            <td colspan="3" class="text-end">Total Kuantitas Kirim:</td>
+                            <td class="text-center"><span id="total-qty-display">0</span></td>
+                            <td></td>
+                        </tr>
+                        <tr id="capacity-warning-row" class="table-danger d-none">
+                            <td colspan="5" class="text-center">
+                                <i class="fa fa-exclamation-triangle"></i>
+                                <strong>Peringatan!</strong> Total kuantitas (<span id="warn-total-qty">0</span>)
+                                melebihi kapasitas kendaraan (<span id="warn-capacity">0</span> <span
+                                    id="warn-unit"></span>).
+                            </td>
+                        </tr>
                         <tr>
                             <td colspan="5" class="">
-                                <div class="flex w-full justify-end">
-                                    <button type="button" onclick="addProdukRow()" class="btn btn-success btn-sm">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted small">
+                                        Kapasitas Kendaraan: <span id="vehicle-capacity-info">-</span>
+                                    </div>
+                                    <button type="button" id="btn-add-row" onclick="addProdukRow()"
+                                        class="btn btn-success btn-sm">
                                         <i class="fa fa-plus"></i> Tambah Baris
                                     </button>
                                 </div>
@@ -247,38 +265,94 @@
 
             function removeProdukRow(btn) {
                 $(btn).closest('tr').remove();
+                validateCapacity();
             }
 
+            function validateCapacity() {
+                let totalQty = 0;
+                $('input[name="kuantitas[]"]').each(function () {
+                    totalQty += parseInt($(this).val()) || 0;
+                });
+
+                $('#total-qty-display').text(totalQty);
+
+                const selectedVehicle = $('#nopol-select option:selected');
+                const capacity = parseInt(selectedVehicle.data('capacity')) || 0;
+                const unit = selectedVehicle.data('unit') || '';
+
+                if (capacity > 0) {
+                    $('#vehicle-capacity-info').text(`${capacity} ${unit}`);
+                    if (totalQty >= capacity) {
+                        $('#capacity-warning-row').removeClass('d-none');
+                        $('#warn-total-qty').text(totalQty);
+                        $('#warn-capacity').text(capacity);
+                        $('#warn-unit').text(unit);
+                        $('#btn-add-row').prop('disabled', true);
+
+                        if (totalQty > capacity) {
+                            $('button[type="submit"]').prop('disabled', true);
+                        } else {
+                            $('button[type="submit"]').prop('disabled', false);
+                        }
+                    } else {
+                        $('#capacity-warning-row').addClass('d-none');
+                        $('#btn-add-row').prop('disabled', false);
+                        $('button[type="submit"]').prop('disabled', false);
+                    }
+                } else {
+                    $('#vehicle-capacity-info').text('-');
+                    $('#capacity-warning-row').addClass('d-none');
+                    $('#btn-add-row').prop('disabled', false);
+                    $('button[type="submit"]').prop('disabled', false);
+                }
+            }
+
+            $(document).on('input', 'input[name="kuantitas[]"]', function () {
+                validateCapacity();
+            });
+
             function addProdukRow() {
+                // Check current capacity before adding
+                const selectedVehicle = $('#nopol-select option:selected');
+                const capacity = parseInt(selectedVehicle.data('capacity')) || 0;
+                let totalQty = 0;
+                $('input[name="kuantitas[]"]').each(function () {
+                    totalQty += parseInt($(this).val()) || 0;
+                });
+
+                if (capacity > 0 && totalQty >= capacity) {
+                    alert('Kapasitas kendaraan sudah tercapai!');
+                    return;
+                }
                 // Always add a new row at the top - users can select products and quantities as needed
                 const newRow = `
-                                                                                                                                    <tr class="product-row new-product-row">
-                                                                                                                                        <td>
-                                                                                                                                            <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
-                                                                                                                                                <option value="">- Pilih Produk -</option>
-                                                                                                                                                @foreach ($produk as $p)
-                                                                                                                                                    <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
-                                                                                                                                                        {{ $p->kodeproduk }} - {{ $p->nama }}
-                                                                                                                                                    </option>
-                                                                                                                                                @endforeach
-                                                                                                                                            </select>
-                                                                                                                                        </td>
-                                                                                                                                        <td>
-                                                                                                                                            <input type="text" name="nama[]" class="form-control" readonly>
-                                                                                                                                        </td>
-                                                                                                                                        <td>
-                                                                                                                                            <input type="text" name="satuan[]" class="form-control" readonly>
-                                                                                                                                        </td>
-                                                                                                                                        <td>
-                                                                                                                                            <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
-                                                                                                                                        </td>
-                                                                                                                                        <td>
-                                                                                                                                                <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
-                                                                                                                                                    <i class="fa fa-trash"></i> Hapus
-                                                                                                                                                </button>
-                                                                                                                                            </td>
-                                                                                                                                    </tr>
-                                                                                                                                `;
+                                                                                                                                                            <tr class="product-row new-product-row">
+                                                                                                                                                                <td>
+                                                                                                                                                                    <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
+                                                                                                                                                                        <option value="">- Pilih Produk -</option>
+                                                                                                                                                                        @foreach ($produk as $p)
+                                                                                                                                                                            <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
+                                                                                                                                                                                {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                                                                                            </option>
+                                                                                                                                                                        @endforeach
+                                                                                                                                                                    </select>
+                                                                                                                                                                </td>
+                                                                                                                                                                <td>
+                                                                                                                                                                    <input type="text" name="nama[]" class="form-control" readonly>
+                                                                                                                                                                </td>
+                                                                                                                                                                <td>
+                                                                                                                                                                    <input type="text" name="satuan[]" class="form-control" readonly>
+                                                                                                                                                                </td>
+                                                                                                                                                                <td>
+                                                                                                                                                                    <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
+                                                                                                                                                                </td>
+                                                                                                                                                                <td>
+                                                                                                                                                                        <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                                                                                            <i class="fa fa-trash"></i> Hapus
+                                                                                                                                                                        </button>
+                                                                                                                                                                    </td>
+                                                                                                                                                            </tr>
+                                                                                                                                                        `;
                 // Insert at the top instead of bottom
                 $('#product-rows').prepend(newRow);
             }
@@ -287,6 +361,7 @@
                 // Vehicle selection handler
                 $('#nopol-select').on('change', function () {
                     const nopol = $(this).val();
+                    validateCapacity();
 
                     if (nopol) {
                         // AJAX get vehicle info

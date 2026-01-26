@@ -116,32 +116,32 @@
                                 : `<span class="badge bg-light text-muted border py-2">No Photo</span>`;
 
                             return `
-                                    <tr>
-                                        <td class="text-center">
-                                            <input type="checkbox" class="form-check-input row-checkbox" value="${k.nopol}" ${selectedIds.has(k.nopol) ? 'checked' : ''}>
-                                        </td>
-                                        <td class="fw-bold text-primary">${k.nopol}</td>
-                                        <td>${k.namakendaraan}</td>
-                                        <td><span class="badge bg-info text-dark">${k.jeniskendaraan}</span></td>
-                                        <td>
-                                            <div class="fw-bold">${k.namadriver}</div>
-                                            <small class="text-muted">${k.kontakdriver || '-'}</small>
-                                        </td>
-                                        <td>${k.tahun}</td>
-                                        <td><span class="badge bg-secondary">${k.kapasitas}</span></td>
-                                        <td>${foto}</td>
-                                        <td class="text-center">
-                                            <div class="btn-group" role="group">
-                                                <a href="/kendaraan/${k.nopol}/edit" class="btn btn-warning btn-sm">
-                                                    <i class="fa fa-edit"></i>
-                                                </a>
-                                                <button type="button" onclick="deleteKendaraan('${k.nopol}')" class="btn btn-danger btn-sm">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `;
+                                            <tr>
+                                                <td class="text-center">
+                                                    <input type="checkbox" class="form-check-input row-checkbox" value="${k.nopol}" ${selectedIds.has(k.nopol) ? 'checked' : ''}>
+                                                </td>
+                                                <td class="fw-bold text-primary">${k.nopol}</td>
+                                                <td>${k.namakendaraan}</td>
+                                                <td><span class="badge bg-info text-dark">${k.jeniskendaraan}</span></td>
+                                                <td>
+                                                    <div class="fw-bold">${k.namadriver}</div>
+                                                    <small class="text-muted">${k.kontakdriver || '-'}</small>
+                                                </td>
+                                                <td>${k.tahun}</td>
+                                                <td><span class="badge bg-secondary">${k.kapasitas} ${k.satuan || ''}</span></td>
+                                                <td>${foto}</td>
+                                                <td class="text-center">
+                                                    <div class="btn-group" role="group">
+                                                        <a href="/kendaraan/${k.nopol}/edit" class="btn btn-warning btn-sm">
+                                                            <i class="fa fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" onclick="deleteKendaraan('${k.nopol}')" class="btn btn-danger btn-sm">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        `;
                         }).join('');
 
                         $('#kendaraan-rows').html(rows || '<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada data kendaraan.</td></tr>');

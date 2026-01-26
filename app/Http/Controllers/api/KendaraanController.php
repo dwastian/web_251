@@ -25,7 +25,8 @@ class KendaraanController extends Controller
             'namadriver' => 'required',
             'kontakdriver' => 'required|string|max:15',
             'tahun' => 'required|integer|between:1900,2155',
-            'kapasitas' => 'required|string',
+            'kapasitas' => 'required|numeric',
+            'satuan' => 'required|string|max:10',
             'foto' => 'nullable|image|max:2048',
         ]);
 
@@ -67,7 +68,8 @@ class KendaraanController extends Controller
             'namadriver' => 'required',
             'kontakdriver' => 'required|string|max:15',
             'tahun' => 'required|integer|between:1900,2155',
-            'kapasitas' => 'required|string',
+            'kapasitas' => 'required|numeric',
+            'satuan' => 'required|string|max:10',
             'foto' => 'nullable|image|max:2048',
         ]);
 
