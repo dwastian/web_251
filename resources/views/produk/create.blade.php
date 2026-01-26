@@ -47,7 +47,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Gudang</label>
-                        <select name="kodegudang" class="form-control select2" required>
+                        <select name="kodegudang" class="form-control" required>
                             <option value="">- Pilih Gudang -</option>
                             @foreach(\App\Models\Gudang::orderBy('namagudang')->get() as $g)
                                 <option value="{{ $g->kodegudang }}">{{ $g->namagudang }}</option>

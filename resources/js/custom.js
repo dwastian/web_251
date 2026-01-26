@@ -1,49 +1,44 @@
-$(document).ready(function() {
+$(document).ready(function () {
     // Initialize all DataTables
-    $('.datatable').DataTable({
+    $(".datatable").DataTable({
         language: {
-            "lengthMenu": "Tampilkan _MENU_ data per halaman",
-            "search": "Cari:",
-            "paginate": {
-                "first": "Pertama",
-                "last": "Terakhir", 
-                "next": "Selanjutnya",
-                "previous": "Sebelumnya"
+            lengthMenu: "Tampilkan _MENU_ data per halaman",
+            search: "Cari:",
+            paginate: {
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya",
             },
-            "info": "Menampilkan _START_ hingga _END_ dari _TOTAL_ data",
-            "infoEmpty": "Menampilkan 0 hingga 0 dari 0 data",
-            "infoFiltered": "(disaring dari _MAX_ total data)",
-            "zeroRecords": "Tidak ada data yang ditemukan",
-            "emptyTable": "Tidak ada data dalam tabel"
+            info: "Menampilkan _START_ hingga _END_ dari _TOTAL_ data",
+            infoEmpty: "Menampilkan 0 hingga 0 dari 0 data",
+            infoFiltered: "(disaring dari _MAX_ total data)",
+            zeroRecords: "Tidak ada data yang ditemukan",
+            emptyTable: "Tidak ada data dalam tabel",
         },
         responsive: true,
         pageLength: 10,
-        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Semua"]]
-    });
-
-    // Initialize Select2 dropdowns
-    $('.select2').select2({
-        theme: 'bootstrap-5',
-        placeholder: '- Pilih -',
-        allowClear: true,
-        width: '100%'
+        lengthMenu: [
+            [5, 10, 25, 50, -1],
+            [5, 10, 25, 50, "Semua"],
+        ],
     });
 
     // SweetAlert2 confirmation for delete buttons
-    $('.delete-form').on('submit', function(e) {
+    $(".delete-form").on("submit", function (e) {
         e.preventDefault();
         const form = this;
-        const itemName = $(form).data('item-name') || 'item ini';
-        
+        const itemName = $(form).data("item-name") || "item ini";
+
         Swal.fire({
-            title: 'Apakah Anda yakin?',
+            title: "Apakah Anda yakin?",
             text: `Data ${itemName} akan dihapus secara permanen!`,
-            icon: 'warning',
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, hapus!',
-            cancelButtonText: 'Batal'
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Ya, hapus!",
+            cancelButtonText: "Batal",
         }).then((result) => {
             if (result.isConfirmed) {
                 form.submit();
@@ -52,23 +47,23 @@ $(document).ready(function() {
     });
 
     // Show success messages with SweetAlert2
-    if (typeof successMessage !== 'undefined' && successMessage) {
+    if (typeof successMessage !== "undefined" && successMessage) {
         Swal.fire({
-            icon: 'success',
-            title: 'Berhasil!',
+            icon: "success",
+            title: "Berhasil!",
             text: successMessage,
             showConfirmButton: false,
-            timer: 1500
+            timer: 1500,
         });
     }
 
     // Show error messages with SweetAlert2
-    if (typeof errorMessage !== 'undefined' && errorMessage) {
+    if (typeof errorMessage !== "undefined" && errorMessage) {
         Swal.fire({
-            icon: 'error',
-            title: 'Error!',
+            icon: "error",
+            title: "Error!",
             text: errorMessage,
-            confirmButtonColor: '#dc3545'
+            confirmButtonColor: "#dc3545",
         });
     }
 });
@@ -76,12 +71,12 @@ $(document).ready(function() {
 // Helper functions for global use
 function showLoading() {
     Swal.fire({
-        title: 'Memproses...',
-        html: 'Mohon tunggu sebentar',
+        title: "Memproses...",
+        html: "Mohon tunggu sebentar",
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();
-        }
+        },
     });
 }
 
@@ -91,24 +86,24 @@ function hideLoading() {
 
 function showSuccess(message) {
     Swal.fire({
-        icon: 'success',
-        title: 'Berhasil!',
+        icon: "success",
+        title: "Berhasil!",
         text: message,
         showConfirmButton: false,
-        timer: 1500
+        timer: 1500,
     });
 }
 
 function showError(message) {
     Swal.fire({
-        icon: 'error',
-        title: 'Error!',
+        icon: "error",
+        title: "Error!",
         text: message,
-        confirmButtonColor: '#dc3545'
+        confirmButtonColor: "#dc3545",
     });
 }
 
 // Auto-hide alerts
-setTimeout(function() {
-    $('.alert').fadeOut('slow');
+setTimeout(function () {
+    $(".alert").fadeOut("slow");
 }, 5000);
