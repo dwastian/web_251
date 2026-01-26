@@ -20,7 +20,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Nomor Polisi (Nopol)</label>
-                        <input type="text" name="nopol" class="form-control" value="{{ $kendaraan->nopol }}"
+                        <input type="text" name="nopol" class="form-control" value="{{ $kendaraan->nopol }}" readonly
                             placeholder="Contoh: B 1234 ABC" required>
                         <div class="invalid-feedback" id="error-nopol"></div>
                     </div>

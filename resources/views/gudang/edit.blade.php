@@ -21,7 +21,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Kode Gudang</label>
-                        <input type="text" name="kodegudang" class="form-control" value="{{ $gudang->kodegudang }}"
+                        <input type="text" name="kodegudang" class="form-control" value="{{ $gudang->kodegudang }}" readonly
                             placeholder="Contoh: GD001" required>
                         <div class="invalid-feedback" id="error-kodegudang"></div>
                     </div>

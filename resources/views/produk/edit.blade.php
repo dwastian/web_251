@@ -20,7 +20,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Kode Produk</label>
-                        <input type="text" name="kodeproduk" class="form-control" value="{{ $produk->kodeproduk }}"
+                        <input type="text" name="kodeproduk" class="form-control" value="{{ $produk->kodeproduk }}" readonly
                             placeholder="Contoh: PRD001" required>
                         <div class="invalid-feedback" id="error-kodeproduk"></div>
                     </div>
