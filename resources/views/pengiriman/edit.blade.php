@@ -346,7 +346,7 @@
 
                 if (capacity > 0) {
                     $('#vehicle-capacity-info').text(`${capacity} ${unit}`);
-                    if (totalQty >= capacity) {
+                    if (totalQty > capacity) {
                         $('#capacity-warning-row').removeClass('d-none');
                         $('#warn-total-qty').text(totalQty);
                         $('#warn-capacity').text(capacity);
@@ -392,35 +392,35 @@
                 }
                 const isConfirmed = "{{ $pengiriman->status }}" === 'Confirmed';
                 const newRow = `
-                                                                                                                                <tr class="product-row new-product-row">
-                                                                                                                                    <td>
-                                                                                                                                        <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" ${isConfirmed ? 'disabled' : 'required'}>
-                                                                                                                                            <option value="">- Pilih Produk -</option>
-                                                                                                                                            @foreach (\App\Models\Produk::orderBy('nama')->get() as $p)
-                                                                                                                                                <option value="{{ $p->kodeproduk }}" ${item && item.kodeproduk == '{{ $p->kodeproduk }}' ? 'selected' : ''}>
-                                                                                                                                                    {{ $p->kodeproduk }} - {{ $p->nama }}
-                                                                                                                                                </option>
-                                                                                                                                            @endforeach
-                                                                                                                                        </select>
-                                                                                                                                    </td>
-                                                                                                                                    <td>
-                                                                                                                                        <input type="text" name="nama[]" class="form-control" value="${item ? item.produk.nama : ''}" readonly>
-                                                                                                                                    </td>
-                                                                                                                                    <td>
-                                                                                                                                        <input type="text" name="satuan[]" class="form-control" value="${item ? item.produk.satuan : ''}" readonly>
-                                                                                                                                    </td>
-                                                                                                                                    <td>
-                                                                                                                                        <input type="number" name="kuantitas[]" class="form-control" min="1" value="${item ? item.qty : 1}" ${isConfirmed ? 'readonly' : 'required'}>
-                                                                                                                                    </td>
-                                                                                                                                    <td>
-                                                                                                                                        ${!isConfirmed ? `
-                                                                                                                                            <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
-                                                                                                                                                <i class="fa fa-trash"></i> Hapus
-                                                                                                                                            </button>
-                                                                                                                                        ` : '-'}
-                                                                                                                                    </td>
-                                                                                                                                </tr>
-                                                                                                                            `;
+                                                                                                                                        <tr class="product-row new-product-row">
+                                                                                                                                            <td>
+                                                                                                                                                <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" ${isConfirmed ? 'disabled' : 'required'}>
+                                                                                                                                                    <option value="">- Pilih Produk -</option>
+                                                                                                                                                    @foreach (\App\Models\Produk::orderBy('nama')->get() as $p)
+                                                                                                                                                        <option value="{{ $p->kodeproduk }}" ${item && item.kodeproduk == '{{ $p->kodeproduk }}' ? 'selected' : ''}>
+                                                                                                                                                            {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                                                                        </option>
+                                                                                                                                                    @endforeach
+                                                                                                                                                </select>
+                                                                                                                                            </td>
+                                                                                                                                            <td>
+                                                                                                                                                <input type="text" name="nama[]" class="form-control" value="${item ? item.produk.nama : ''}" readonly>
+                                                                                                                                            </td>
+                                                                                                                                            <td>
+                                                                                                                                                <input type="text" name="satuan[]" class="form-control" value="${item ? item.produk.satuan : ''}" readonly>
+                                                                                                                                            </td>
+                                                                                                                                            <td>
+                                                                                                                                                <input type="number" name="kuantitas[]" class="form-control" min="1" value="${item ? item.qty : 1}" ${isConfirmed ? 'readonly' : 'required'}>
+                                                                                                                                            </td>
+                                                                                                                                            <td>
+                                                                                                                                                ${!isConfirmed ? `
+                                                                                                                                                    <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                                                                        <i class="fa fa-trash"></i> Hapus
+                                                                                                                                                    </button>
+                                                                                                                                                ` : '-'}
+                                                                                                                                            </td>
+                                                                                                                                        </tr>
+                                                                                                                                    `;
                 $('#product-rows').append(newRow);
             }
 

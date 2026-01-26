@@ -282,7 +282,7 @@
 
                 if (capacity > 0) {
                     $('#vehicle-capacity-info').text(`${capacity} ${unit}`);
-                    if (totalQty >= capacity) {
+                    if (totalQty > capacity) {
                         $('#capacity-warning-row').removeClass('d-none');
                         $('#warn-total-qty').text(totalQty);
                         $('#warn-capacity').text(capacity);
@@ -326,33 +326,33 @@
                 }
                 // Always add a new row at the top - users can select products and quantities as needed
                 const newRow = `
-                                                                                                                                                            <tr class="product-row new-product-row">
-                                                                                                                                                                <td>
-                                                                                                                                                                    <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
-                                                                                                                                                                        <option value="">- Pilih Produk -</option>
-                                                                                                                                                                        @foreach ($produk as $p)
-                                                                                                                                                                            <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
-                                                                                                                                                                                {{ $p->kodeproduk }} - {{ $p->nama }}
-                                                                                                                                                                            </option>
-                                                                                                                                                                        @endforeach
-                                                                                                                                                                    </select>
-                                                                                                                                                                </td>
-                                                                                                                                                                <td>
-                                                                                                                                                                    <input type="text" name="nama[]" class="form-control" readonly>
-                                                                                                                                                                </td>
-                                                                                                                                                                <td>
-                                                                                                                                                                    <input type="text" name="satuan[]" class="form-control" readonly>
-                                                                                                                                                                </td>
-                                                                                                                                                                <td>
-                                                                                                                                                                    <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
-                                                                                                                                                                </td>
-                                                                                                                                                                <td>
-                                                                                                                                                                        <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
-                                                                                                                                                                            <i class="fa fa-trash"></i> Hapus
-                                                                                                                                                                        </button>
-                                                                                                                                                                    </td>
-                                                                                                                                                            </tr>
-                                                                                                                                                        `;
+                                                                                                                                                                    <tr class="product-row new-product-row">
+                                                                                                                                                                        <td>
+                                                                                                                                                                            <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
+                                                                                                                                                                                <option value="">- Pilih Produk -</option>
+                                                                                                                                                                                @foreach ($produk as $p)
+                                                                                                                                                                                    <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
+                                                                                                                                                                                        {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                                                                                                    </option>
+                                                                                                                                                                                @endforeach
+                                                                                                                                                                            </select>
+                                                                                                                                                                        </td>
+                                                                                                                                                                        <td>
+                                                                                                                                                                            <input type="text" name="nama[]" class="form-control" readonly>
+                                                                                                                                                                        </td>
+                                                                                                                                                                        <td>
+                                                                                                                                                                            <input type="text" name="satuan[]" class="form-control" readonly>
+                                                                                                                                                                        </td>
+                                                                                                                                                                        <td>
+                                                                                                                                                                            <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
+                                                                                                                                                                        </td>
+                                                                                                                                                                        <td>
+                                                                                                                                                                                <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                                                                                                    <i class="fa fa-trash"></i> Hapus
+                                                                                                                                                                                </button>
+                                                                                                                                                                            </td>
+                                                                                                                                                                    </tr>
+                                                                                                                                                                `;
                 // Insert at the top instead of bottom
                 $('#product-rows').prepend(newRow);
             }
