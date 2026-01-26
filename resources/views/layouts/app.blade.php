@@ -63,9 +63,21 @@
 
 
         <!-- CONTENT -->
-        <main class="content-wrapper p-4">
+        <main class="content-wrapper p-4 min-h-dvh h-full">
             @yield('content')
         </main>
+
+        <footer class="main-footer bg-white border-top py-3 text-center">
+            <div class="container-fluid">
+                <span class="text-muted small">
+                    &copy; 2026 <strong><a href="/" class="text-decoration-none text-primary">Raffy
+                            Logistik</a></strong>. All rights reserved.
+                </span>
+                <div class="float-end d-none d-sm-inline-block">
+                    <span class="text-muted small">Versi 1.0.0</span>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- JQuery -->
