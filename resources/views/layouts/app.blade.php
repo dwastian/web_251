@@ -27,35 +27,66 @@
     <div class="wrapper">
 
         <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg bg-green-900">
-            <ul class="nav flex w-full nav-sidebar">
-                <li class="nav-item">
-                    <a href="/" class="nav-link"><i class="fa text-white fa-home"></i><span
-                            class="ms-2 text-white">Dashboard</span></a>
-                </li>
+        <nav class="navbar navbar-expand-lg bg-green-900 px-3">
+            <div class="container-fluid p-0">
+                <ul class="nav nav-sidebar me-auto d-flex align-items-center">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link"><i class="fa text-white fa-home"></i><span
+                                class="ms-2 text-white d-none d-sm-inline">Dashboard</span></a>
+                    </li>
+                    @auth
+                        <li class="nav-item">
+                            <a href="/produk" class="nav-link"><i class="fa text-white fa-box"></i><span
+                                    class="ms-2 text-white d-none d-sm-inline">Produk</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/gudang" class="nav-link"><i class="fa text-white fa-warehouse"></i><span
+                                    class="ms-2 text-white d-none d-sm-inline">Gudang</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/kendaraan" class="nav-link"><i class="fa text-white fa-truck-pickup"></i><span
+                                    class="ms-2 text-white d-none d-sm-inline">Kendaraan</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/pengiriman" class="nav-link"><i class="fa text-white fa-shipping-fast"></i><span
+                                    class="ms-2 text-white d-none d-sm-inline">Pengiriman</span></a>
+                        </li>
+                    @endauth
+                </ul>
 
-                <li class="nav-item">
-                    <a href="/produk" class="nav-link"><i class="fa text-white fa-box"></i><span
-                            class="ms-2 text-white">Produk</span></a>
-                </li>
-
-                <li class="nav-item">
-                    <a href="/gudang" class="nav-link"><i class="fa text-white fa-warehouse"></i><span
-                            class="ms-2 text-white">Gudang</span></a>
-                </li>
-
-                <li class="nav-item">
-                    <a href="/kendaraan" class="nav-link"><i class="fa text-white fa-truck-pickup"></i><span
-                            class="ms-2 text-white">Kendaraan</span></a>
-                </li>
-
-                <li class="nav-item">
-                    <a href="/pengiriman" class="nav-link"><i class="fa text-white fa-shipping-fast"></i><span
-                            class="ms-2 text-white">Pengiriman Barang</span></a>
-                </li>
-
-
-            </ul>
+                <ul class="navbar-nav ms-auto">
+                    @auth
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <i class="fa fa-user-circle me-1"></i> {{ Auth::user()->name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 10px;">
+                                <li>
+                                    <h6 class="dropdown-header small text-muted">Akses: Admin</h6>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <form action="/logout" method="POST">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fa fa-sign-out-alt me-2"></i> Keluar (Logout)
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    @else
+                        <li class="nav-item">
+                            <a href="/login" class="nav-link text-white fw-bold">
+                                <i class="fa fa-sign-in-alt me-1"></i> Login
+                            </a>
+                        </li>
+                    @endauth
+                </ul>
+            </div>
         </nav>
 
 
