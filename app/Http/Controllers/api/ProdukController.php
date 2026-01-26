@@ -77,7 +77,7 @@ class ProdukController extends Controller
         if ($produk->detailkirim()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Produk tidak dapat dihapus karena masih digunakan dalam pengiriman.'
+                'message' => 'Produk "' . $produk->nama . '" tidak dapat dihapus karena masih digunakan dalam pengiriman.'
             ], 409);
         }
 
@@ -89,6 +89,38 @@ class ProdukController extends Controller
             'success' => true,
             'message' => 'Produk berhasil dihapus.'
         ]);
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->ids;
+        if (!$ids || !is_array($ids)) {
+            return response()->json(['message' => 'Tidak ada data yang dipilih.'], 400);
+        }
+
+        $produks = Produk::whereIn('kodeproduk', $ids)->get();
+        $restricted = [];
+
+        foreach ($produks as $p) {
+            if ($p->detailkirim()->exists()) {
+                $restricted[] = $p->nama;
+            }
+        }
+
+        if (!empty($restricted)) {
+            return response()->json([
+                'message' => 'Beberapa produk tidak dapat dihapus karena masih digunakan dalam pengiriman: ' . implode(', ', $restricted)
+            ], 409);
+        }
+
+        foreach ($produks as $p) {
+            if ($p->gambar) Storage::disk('public')->delete($p->gambar);
+            $p->delete();
+        }
+
+        return response()->json([
+            'message' => count($ids) . ' produk berhasil dihapus.'
+        ], 200);
     }
 
     public function getProduk($id)

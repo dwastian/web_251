@@ -332,4 +332,32 @@ class PengirimanController extends Controller
             ], 500);
         }
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->ids;
+        if (!$ids || !is_array($ids)) {
+            return response()->json(['message' => 'Tidak ada data yang dipilih.'], 400);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Delete details first then master
+            DetailKirim::whereIn('kodekirim', $ids)->delete();
+            MasterKirim::whereIn('kodekirim', $ids)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => count($ids) . ' pengiriman berhasil dihapus.'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal menghapus beberapa pengiriman.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

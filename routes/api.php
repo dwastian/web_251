@@ -21,6 +21,7 @@ Route::group(["prefix" => "/pengiriman"], function () {
     Route::put('/update-detail-qty/{detail}', [PengirimanController::class, 'updateDetailQty']);
     Route::delete('/remove-detail/{detail}', [PengirimanController::class, 'removeDetail']);
     Route::delete('/{pengiriman}', [PengirimanController::class, 'destroy']);
+    Route::post('/bulk-delete', [PengirimanController::class, 'bulkDestroy']);
 });
 
 Route::group(['prefix' => '/produk'], function () {
@@ -30,6 +31,7 @@ Route::group(['prefix' => '/produk'], function () {
     Route::post('/update/{produk}', [ProdukController::class, 'update']);
     Route::delete('/{produk}', [ProdukController::class, 'destroy']);
     Route::get('/get-produk/{id}', [ProdukController::class, 'getProduk']);
+    Route::post('/bulk-delete', [ProdukController::class, 'bulkDestroy']);
 });
 
 Route::group(['prefix' => '/kendaraan'], function () {
@@ -38,6 +40,7 @@ Route::group(['prefix' => '/kendaraan'], function () {
     Route::get('/{kendaraan}', [KendaraanController::class, 'show']);
     Route::post('/update/{kendaraan}', [KendaraanController::class, 'update']); // Using POST for potential multipart/form-data with file upload
     Route::delete('/{kendaraan}', [KendaraanController::class, 'destroy']);
+    Route::post('/bulk-delete', [KendaraanController::class, 'bulkDestroy']);
 });
 
 Route::group(['prefix' => '/gudang'], function () {
@@ -46,4 +49,5 @@ Route::group(['prefix' => '/gudang'], function () {
     Route::get('/{gudang}', [GudangController::class, 'show']);
     Route::put('/{gudang}', [GudangController::class, 'update']);
     Route::delete('/{gudang}', [GudangController::class, 'destroy']);
+    Route::post('/bulk-delete', [GudangController::class, 'bulkDestroy']);
 });

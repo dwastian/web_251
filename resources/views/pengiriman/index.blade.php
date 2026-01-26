@@ -6,9 +6,14 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4>Daftar Pengiriman Barang</h4>
-        <a href="{{ route('pengiriman.create') }}" class="btn btn-primary">
-            <i class="fa fa-plus"></i> Buat Pengiriman Baru
-        </a>
+        <div class="btn-group">
+            <button type="button" id="btn-bulk-delete" class="btn btn-outline-danger d-none" onclick="bulkDelete()">
+                <i class="fa fa-trash me-1"></i> Hapus Terpilih (<span id="selected-count">0</span>)
+            </button>
+            <a href="{{ route('pengiriman.create') }}" class="btn btn-primary ms-2">
+                <i class="fa fa-plus"></i> Buat Pengiriman Baru
+            </a>
+        </div>
     </div>
 
     <div class="card">
@@ -16,6 +21,9 @@
             <table class="table table-bordered" id="pengiriman-table">
                 <thead>
                     <tr>
+                        <th width="40" class="text-center">
+                            <input type="checkbox" class="form-check-input" id="select-all">
+                        </th>
                         <th>Kode Pengiriman</th>
                         <th>Tanggal Kirim</th>
                         <th>Kendaraan</th>
@@ -27,7 +35,7 @@
                 </thead>
                 <tbody id="pengiriman-rows">
                     <tr>
-                        <td colspan="7" class="text-center">Sedang memuat data...</td>
+                        <td colspan="8" class="text-center">Sedang memuat data...</td>
                     </tr>
                 </tbody>
             </table>
@@ -46,14 +54,49 @@
     @push('scripts')
         <script>
             let currentPage = 1;
+            let selectedIds = new Set();
 
             $(document).ready(function () {
                 loadData(currentPage);
+
+                $('#select-all').on('click', function () {
+                    const isChecked = $(this).prop('checked');
+                    $('.row-checkbox').prop('checked', isChecked);
+                    updateSelectedIds();
+                });
+
+                $(document).on('click', '.row-checkbox', function () {
+                    updateSelectedIds();
+
+                    const totalCheckboxes = $('.row-checkbox').length;
+                    const checkedCheckboxes = $('.row-checkbox:checked').length;
+                    $('#select-all').prop('checked', totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0);
+                });
             });
+
+            function updateSelectedIds() {
+                $('.row-checkbox').each(function () {
+                    const id = $(this).val();
+                    if ($(this).prop('checked')) {
+                        selectedIds.add(id);
+                    } else {
+                        selectedIds.delete(id);
+                    }
+                });
+
+                const count = selectedIds.size;
+                $('#selected-count').text(count);
+                if (count > 0) {
+                    $('#btn-bulk-delete').removeClass('d-none');
+                } else {
+                    $('#btn-bulk-delete').addClass('d-none');
+                }
+            }
 
             function loadData(page = 1) {
                 currentPage = page;
-                $('#pengiriman-rows').html('<tr><td colspan="7" class="text-center">Sedang memuat data...</td></tr>');
+                $('#pengiriman-rows').html('<tr><td colspan="8" class="text-center">Sedang memuat data...</td></tr>');
+                $('#select-all').prop('checked', false);
 
                 fetch(`/api/pengiriman?page=${page}`, {
                     headers: {
@@ -74,32 +117,35 @@
                             }
 
                             let actions = `
-                                                        <div class="btn-group" role="group">
-                                                            ${p.status !== 'Confirmed' ? `
-                                                                <a href="/pengiriman/${p.kodekirim}/edit" class="btn btn-warning btn-sm">
-                                                                    <i class="fa fa-edit"></i>
-                                                                </a>
-                                                            ` : ''}
-                                                            <button type="button" onclick="deletePengiriman('${p.kodekirim}')" class="btn btn-danger btn-sm">
-                                                                <i class="fa fa-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    `;
+                                                                <div class="btn-group" role="group">
+                                                                    ${p.status !== 'Confirmed' ? `
+                                                                        <a href="/pengiriman/${p.kodekirim}/edit" class="btn btn-warning btn-sm">
+                                                                            <i class="fa fa-edit"></i>
+                                                                        </a>
+                                                                    ` : ''}
+                                                                    <button type="button" onclick="deletePengiriman('${p.kodekirim}')" class="btn btn-danger btn-sm">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            `;
 
                             return `
-                                                        <tr>
-                                                            <td><span class="badge bg-primary">${p.kodekirim}</span></td>
-                                                            <td>${tgl}</td>
-                                                            <td>${kendaraanInfo}</td>
-                                                            <td>${driverInfo}</td>
-                                                            <td><span class="badge bg-info">${p.totalqty}</span></td>
-                                                            <td><span class="badge bg-${statusColor}">${p.status}</span></td>
-                                                            <td>${actions}</td>
-                                                        </tr>
-                                                    `;
+                                                                <tr>
+                                                                    <td class="text-center">
+                                                                        <input type="checkbox" class="form-check-input row-checkbox" value="${p.kodekirim}" ${selectedIds.has(p.kodekirim) ? 'checked' : ''}>
+                                                                    </td>
+                                                                    <td><span class="badge bg-primary">${p.kodekirim}</span></td>
+                                                                    <td>${tgl}</td>
+                                                                    <td>${kendaraanInfo}</td>
+                                                                    <td>${driverInfo}</td>
+                                                                    <td><span class="badge bg-info">${p.totalqty}</span></td>
+                                                                    <td><span class="badge bg-${statusColor}">${p.status}</span></td>
+                                                                    <td>${actions}</td>
+                                                                </tr>
+                                                            `;
                         }).join('');
 
-                        $('#pengiriman-rows').html(rows || '<tr><td colspan="7" class="text-center">Tidak ada data.</td></tr>');
+                        $('#pengiriman-rows').html(rows || '<tr><td colspan="8" class="text-center">Tidak ada data.</td></tr>');
 
                         // Update Pagination Info
                         $('#pagination-info').text(`Showing ${res.from || 0} to ${res.to || 0} of ${res.total} entries`);
@@ -109,7 +155,7 @@
                     })
                     .catch(err => {
                         console.error(err);
-                        $('#pengiriman-rows').html('<tr><td colspan="7" class="text-center text-danger">Gagal memuat data.</td></tr>');
+                        $('#pengiriman-rows').html('<tr><td colspan="8" class="text-center text-danger">Gagal memuat data.</td></tr>');
                     });
             }
 
@@ -118,10 +164,10 @@
 
                 // Previous button
                 html += `
-                                    <li class="page-item ${data.current_page === 1 ? 'disabled' : ''}">
-                                        <a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page - 1})">Previous</a>
-                                    </li>
-                                `;
+                                            <li class="page-item ${data.current_page === 1 ? 'disabled' : ''}">
+                                                <a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page - 1})">Previous</a>
+                                            </li>
+                                        `;
 
                 // Page numbers
                 // Simple version: showing 5 pages around current
@@ -133,18 +179,18 @@
 
                 for (let i = startPage; i <= endPage; i++) {
                     html += `
-                                        <li class="page-item ${i === data.current_page ? 'active' : ''}">
-                                            <a class="page-link" href="#" onclick="event.preventDefault(); loadData(${i})">${i}</a>
-                                        </li>
-                                    `;
+                                                <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                                                    <a class="page-link" href="#" onclick="event.preventDefault(); loadData(${i})">${i}</a>
+                                                </li>
+                                            `;
                 }
 
                 // Next button
                 html += `
-                                    <li class="page-item ${data.current_page === data.last_page ? 'disabled' : ''}">
-                                        <a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page + 1})">Next</a>
-                                    </li>
-                                `;
+                                            <li class="page-item ${data.current_page === data.last_page ? 'disabled' : ''}">
+                                                <a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page + 1})">Next</a>
+                                            </li>
+                                        `;
 
                 html += '</ul>';
                 $('#pagination-nav').html(html);
@@ -167,6 +213,39 @@
                         .catch(err => {
                             console.error(err);
                             alert('Gagal menghapus data.');
+                        });
+                }
+            }
+
+            function bulkDelete() {
+                const ids = Array.from(selectedIds);
+                if (ids.length === 0) return;
+
+                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} pengiriman terpilih?`)) {
+                    fetch('/api/pengiriman/bulk-delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: ids })
+                    })
+                        .then(async res => {
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus data.');
+                            return data;
+                        })
+                        .then(data => {
+                            alert(data.message);
+                            selectedIds.clear();
+                            $('#selected-count').text(0);
+                            $('#btn-bulk-delete').addClass('d-none');
+                            loadData(currentPage);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert(err.message);
                         });
                 }
             }

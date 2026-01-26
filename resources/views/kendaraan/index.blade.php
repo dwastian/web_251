@@ -5,9 +5,14 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4>Data Kendaraan</h4>
-        <a href="{{ route('kendaraan.create') }}" class="btn btn-primary">
-            <i class="fa fa-plus me-1"></i> Tambah Kendaraan
-        </a>
+        <div class="btn-group">
+            <button type="button" id="btn-bulk-delete" class="btn btn-outline-danger d-none" onclick="bulkDelete()">
+                <i class="fa fa-trash me-1"></i> Hapus Terpilih (<span id="selected-count">0</span>)
+            </button>
+            <a href="{{ route('kendaraan.create') }}" class="btn btn-primary ms-2">
+                <i class="fa fa-plus me-1"></i> Tambah Kendaraan
+            </a>
+        </div>
     </div>
 
     <div class="card border-0 shadow-sm" style="border-radius: 15px;">
@@ -16,6 +21,9 @@
                 <table class="table table-hover align-middle" id="kendaraan-table">
                     <thead class="table-light">
                         <tr>
+                            <th width="40" class="text-center">
+                                <input type="checkbox" autofocus class="form-check-input" id="select-all">
+                            </th>
                             <th>Nopol</th>
                             <th>Nama Kendaraan</th>
                             <th>Jenis</th>
@@ -28,7 +36,7 @@
                     </thead>
                     <tbody id="kendaraan-rows">
                         <tr>
-                            <td colspan="8" class="text-center py-4">
+                            <td colspan="9" class="text-center py-4">
                                 <div class="spinner-border spinner-border-sm text-primary me-2"></div>
                                 Sedang memuat data...
                             </td>
@@ -51,14 +59,49 @@
     @push('scripts')
         <script>
             let currentPage = 1;
+            let selectedIds = new Set();
 
             $(document).ready(function () {
                 loadData(currentPage);
+
+                $('#select-all').on('click', function () {
+                    const isChecked = $(this).prop('checked');
+                    $('.row-checkbox').prop('checked', isChecked);
+                    updateSelectedIds();
+                });
+
+                $(document).on('click', '.row-checkbox', function () {
+                    updateSelectedIds();
+
+                    const totalCheckboxes = $('.row-checkbox').length;
+                    const checkedCheckboxes = $('.row-checkbox:checked').length;
+                    $('#select-all').prop('checked', totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0);
+                });
             });
+
+            function updateSelectedIds() {
+                $('.row-checkbox').each(function () {
+                    const id = $(this).val();
+                    if ($(this).prop('checked')) {
+                        selectedIds.add(id);
+                    } else {
+                        selectedIds.delete(id);
+                    }
+                });
+
+                const count = selectedIds.size;
+                $('#selected-count').text(count);
+                if (count > 0) {
+                    $('#btn-bulk-delete').removeClass('d-none');
+                } else {
+                    $('#btn-bulk-delete').addClass('d-none');
+                }
+            }
 
             function loadData(page = 1) {
                 currentPage = page;
-                $('#kendaraan-rows').html('<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Sedang memuat data...</td></tr>');
+                $('#kendaraan-rows').html('<tr><td colspan="9" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Sedang memuat data...</td></tr>');
+                $('#select-all').prop('checked', false);
 
                 fetch(`/api/kendaraan?page=${page}`, {
                     headers: {
@@ -74,6 +117,9 @@
 
                             return `
                                     <tr>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input row-checkbox" value="${k.nopol}" ${selectedIds.has(k.nopol) ? 'checked' : ''}>
+                                        </td>
                                         <td class="fw-bold text-primary">${k.nopol}</td>
                                         <td>${k.namakendaraan}</td>
                                         <td><span class="badge bg-info text-dark">${k.jeniskendaraan}</span></td>
@@ -98,14 +144,14 @@
                                 `;
                         }).join('');
 
-                        $('#kendaraan-rows').html(rows || '<tr><td colspan="8" class="text-center py-4 text-muted">Tidak ada data kendaraan.</td></tr>');
+                        $('#kendaraan-rows').html(rows || '<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada data kendaraan.</td></tr>');
 
                         $('#pagination-info').text(`Showing ${res.from || 0} to ${res.to || 0} of ${res.total} entries`);
                         renderPagination(res);
                     })
                     .catch(err => {
                         console.error(err);
-                        $('#kendaraan-rows').html('<tr><td colspan="8" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
+                        $('#kendaraan-rows').html('<tr><td colspan="9" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
                     });
             }
 
@@ -119,7 +165,6 @@
                 html += `<li class="page-item ${data.current_page === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${data.current_page - 1})">Previous</a></li>`;
 
                 for (let i = 1; i <= data.last_page; i++) {
-                    // Optimized simple pagination
                     if (i === 1 || i === data.last_page || (i >= data.current_page - 1 && i <= data.current_page + 1)) {
                         html += `<li class="page-item ${i === data.current_page ? 'active' : ''}"><a class="page-link" href="#" onclick="event.preventDefault(); loadData(${i})">${i}</a></li>`;
                     } else if (i === data.current_page - 2 || i === data.current_page + 2) {
@@ -149,6 +194,39 @@
                         .catch(err => {
                             console.error(err);
                             alert('Gagal menghapus data.');
+                        });
+                }
+            }
+
+            function bulkDelete() {
+                const ids = Array.from(selectedIds);
+                if (ids.length === 0) return;
+
+                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} kendaraan terpilih?`)) {
+                    fetch('/api/kendaraan/bulk-delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: ids })
+                    })
+                        .then(async res => {
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus data.');
+                            return data;
+                        })
+                        .then(data => {
+                            alert(data.message);
+                            selectedIds.clear();
+                            $('#selected-count').text(0);
+                            $('#btn-bulk-delete').addClass('d-none');
+                            loadData(currentPage);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert(err.message);
                         });
                 }
             }

@@ -5,9 +5,14 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4>Data Produk</h4>
-        <a href="{{ route('produk.create') }}" class="btn btn-primary">
-            <i class="fa fa-plus me-1"></i> Tambah Produk
-        </a>
+        <div class="btn-group">
+            <button type="button" id="btn-bulk-delete" class="btn btn-outline-danger d-none" onclick="bulkDelete()">
+                <i class="fa fa-trash me-1"></i> Hapus Terpilih (<span id="selected-count">0</span>)
+            </button>
+            <a href="{{ route('produk.create') }}" class="btn btn-primary ms-2">
+                <i class="fa fa-plus me-1"></i> Tambah Produk
+            </a>
+        </div>
     </div>
 
     <div class="card border-0 shadow-sm" style="border-radius: 15px;">
@@ -16,6 +21,9 @@
                 <table class="table table-hover align-middle" id="produk-table">
                     <thead class="table-light">
                         <tr>
+                            <th width="40" class="text-center">
+                                <input type="checkbox" autofocus class="form-check-input" id="select-all">
+                            </th>
                             <th>Kode</th>
                             <th>Nama</th>
                             <th>Satuan</th>
@@ -27,7 +35,7 @@
                     </thead>
                     <tbody id="produk-rows">
                         <tr>
-                            <td colspan="7" class="text-center py-4">
+                            <td colspan="8" class="text-center py-4">
                                 <div class="spinner-border spinner-border-sm text-primary me-2"></div>
                                 Sedang memuat data...
                             </td>
@@ -50,14 +58,49 @@
     @push('scripts')
         <script>
             let currentPage = 1;
+            let selectedIds = new Set();
 
             $(document).ready(function () {
                 loadData(currentPage);
+
+                $('#select-all').on('click', function () {
+                    const isChecked = $(this).prop('checked');
+                    $('.row-checkbox').prop('checked', isChecked);
+                    updateSelectedIds();
+                });
+
+                $(document).on('click', '.row-checkbox', function () {
+                    updateSelectedIds();
+
+                    const totalCheckboxes = $('.row-checkbox').length;
+                    const checkedCheckboxes = $('.row-checkbox:checked').length;
+                    $('#select-all').prop('checked', totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0);
+                });
             });
+
+            function updateSelectedIds() {
+                $('.row-checkbox').each(function () {
+                    const id = $(this).val();
+                    if ($(this).prop('checked')) {
+                        selectedIds.add(id);
+                    } else {
+                        selectedIds.delete(id);
+                    }
+                });
+
+                const count = selectedIds.size;
+                $('#selected-count').text(count);
+                if (count > 0) {
+                    $('#btn-bulk-delete').removeClass('d-none');
+                } else {
+                    $('#btn-bulk-delete').addClass('d-none');
+                }
+            }
 
             function loadData(page = 1) {
                 currentPage = page;
-                $('#produk-rows').html('<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Sedang memuat data...</td></tr>');
+                $('#produk-rows').html('<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Sedang memuat data...</td></tr>');
+                $('#select-all').prop('checked', false);
 
                 fetch(`/api/produk?page=${page}`, {
                     headers: {
@@ -75,6 +118,9 @@
 
                             return `
                                     <tr>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input row-checkbox" value="${p.kodeproduk}" ${selectedIds.has(p.kodeproduk) ? 'checked' : ''}>
+                                        </td>
                                         <td class="fw-bold text-primary">${p.kodeproduk}</td>
                                         <td>${p.nama}</td>
                                         <td><span class="badge bg-info text-dark">${p.satuan}</span></td>
@@ -95,14 +141,14 @@
                                 `;
                         }).join('');
 
-                        $('#produk-rows').html(rows || '<tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data produk.</td></tr>');
+                        $('#produk-rows').html(rows || '<tr><td colspan="8" class="text-center py-4 text-muted">Tidak ada data produk.</td></tr>');
 
                         $('#pagination-info').text(`Showing ${res.from || 0} to ${res.to || 0} of ${res.total} entries`);
                         renderPagination(res);
                     })
                     .catch(err => {
                         console.error(err);
-                        $('#produk-rows').html('<tr><td colspan="7" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
+                        $('#produk-rows').html('<tr><td colspan="8" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
                     });
             }
 
@@ -145,6 +191,39 @@
                         .catch(err => {
                             console.error(err);
                             alert('Gagal menghapus data.');
+                        });
+                }
+            }
+
+            function bulkDelete() {
+                const ids = Array.from(selectedIds);
+                if (ids.length === 0) return;
+
+                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} produk terpilih?`)) {
+                    fetch('/api/produk/bulk-delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: ids })
+                    })
+                        .then(async res => {
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus data.');
+                            return data;
+                        })
+                        .then(data => {
+                            alert(data.message);
+                            selectedIds.clear();
+                            $('#selected-count').text(0);
+                            $('#btn-bulk-delete').addClass('d-none');
+                            loadData(currentPage);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert(err.message);
                         });
                 }
             }

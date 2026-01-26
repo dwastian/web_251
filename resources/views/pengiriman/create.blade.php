@@ -187,7 +187,7 @@
             </div>
         </div>
 
-        <div class="d-flex justify-content-center mt-4">
+        <div class="flex items-center justify-center mt-4 gap-2">
             <button type="submit" name="submit_form" value="create" class="btn btn-primary btn-lg">
                 <i class="fa fa-save"></i> Buat Pengiriman
             </button>
@@ -252,33 +252,33 @@
             function addProdukRow() {
                 // Always add a new row at the top - users can select products and quantities as needed
                 const newRow = `
-                                                                                            <tr class="product-row new-product-row">
-                                                                                                <td>
-                                                                                                    <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
-                                                                                                        <option value="">- Pilih Produk -</option>
-                                                                                                        @foreach ($produk as $p)
-                                                                                                            <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
-                                                                                                                {{ $p->kodeproduk }} - {{ $p->nama }}
-                                                                                                            </option>
-                                                                                                        @endforeach
-                                                                                                    </select>
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                    <input type="text" name="nama[]" class="form-control" readonly>
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                    <input type="text" name="satuan[]" class="form-control" readonly>
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                    <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                        <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
-                                                                                                            <i class="fa fa-trash"></i> Hapus
-                                                                                                        </button>
-                                                                                                    </td>
-                                                                                            </tr>
-                                                                                        `;
+                                                                                                                                    <tr class="product-row new-product-row">
+                                                                                                                                        <td>
+                                                                                                                                            <select name="produk[]" class="form-control product-select" onchange="getProductInfo(this)" required>
+                                                                                                                                                <option value="">- Pilih Produk -</option>
+                                                                                                                                                @foreach ($produk as $p)
+                                                                                                                                                    <option value="{{ $p->kodeproduk }}" data-nama="{{ $p->nama }}" data-satuan="{{ $p->satuan }}">
+                                                                                                                                                        {{ $p->kodeproduk }} - {{ $p->nama }}
+                                                                                                                                                    </option>
+                                                                                                                                                @endforeach
+                                                                                                                                            </select>
+                                                                                                                                        </td>
+                                                                                                                                        <td>
+                                                                                                                                            <input type="text" name="nama[]" class="form-control" readonly>
+                                                                                                                                        </td>
+                                                                                                                                        <td>
+                                                                                                                                            <input type="text" name="satuan[]" class="form-control" readonly>
+                                                                                                                                        </td>
+                                                                                                                                        <td>
+                                                                                                                                            <input type="number" name="kuantitas[]" class="form-control" min="1" value="1" required>
+                                                                                                                                        </td>
+                                                                                                                                        <td>
+                                                                                                                                                <button type="button" onclick="removeProdukRow(this)" class="btn btn-danger btn-sm remove-product-btn">
+                                                                                                                                                    <i class="fa fa-trash"></i> Hapus
+                                                                                                                                                </button>
+                                                                                                                                            </td>
+                                                                                                                                    </tr>
+                                                                                                                                `;
                 // Insert at the top instead of bottom
                 $('#product-rows').prepend(newRow);
             }

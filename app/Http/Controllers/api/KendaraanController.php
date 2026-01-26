@@ -102,7 +102,7 @@ class KendaraanController extends Controller
     {
         if ($kendaraan->masterkirim()->exists()) {
             return response()->json([
-                'message' => 'Kendaraan tidak dapat dihapus karena masih digunakan dalam pengiriman.'
+                'message' => 'Kendaraan "' . $kendaraan->nopol . '" tidak dapat dihapus karena masih digunakan dalam pengiriman.'
             ], 409); // Conflict
         }
 
@@ -114,6 +114,38 @@ class KendaraanController extends Controller
 
         return response()->json([
             'message' => 'Kendaraan berhasil dihapus.'
+        ], 200);
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->ids;
+        if (!$ids || !is_array($ids)) {
+            return response()->json(['message' => 'Tidak ada data yang dipilih.'], 400);
+        }
+
+        $kendaraans = Kendaraan::whereIn('nopol', $ids)->get();
+        $restricted = [];
+
+        foreach ($kendaraans as $k) {
+            if ($k->masterkirim()->exists()) {
+                $restricted[] = $k->nopol;
+            }
+        }
+
+        if (!empty($restricted)) {
+            return response()->json([
+                'message' => 'Beberapa kendaraan tidak dapat dihapus karena masih digunakan dalam pengiriman: ' . implode(', ', $restricted)
+            ], 409);
+        }
+
+        foreach ($kendaraans as $k) {
+            if ($k->foto) Storage::disk('public')->delete($k->foto);
+            $k->delete();
+        }
+
+        return response()->json([
+            'message' => count($ids) . ' kendaraan berhasil dihapus.'
         ], 200);
     }
 }
